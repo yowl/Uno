@@ -44,8 +44,8 @@ _If you need to set source programmatically (ie, using `_mediaPlayerElement.Sour
 |						| Change playback rate									| -     | -  		|												|
 |						| Player controls on locked screen support  			| -     | -  		|												|
 |						| Playlists support		  								| -     | -  		|												|
-|						| Subtitles	support			  							| -     | -  		|												|
-|						| Languages	support			  							| -     | -  		|												|
+|						| Subtitles	support			  							| X     | -  		|												|
+|						| Languages	support			  							| X     | -  		|												|
 
 ## Requirement
 

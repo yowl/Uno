@@ -1,10 +1,14 @@
 #if __ANDROID__ || __IOS__
 
 using System;
+using System.Linq;
 using System.Timers;
 using Uno.Disposables;
+using System.Windows.Input;
 using Uno.Extensions;
 using Uno.Logging;
+using Uno.UI.Common;
+using Windows.Media.Core;
 using Windows.Media.Playback;
 using Windows.UI.Core;
 using Windows.UI.Xaml.Controls.Primitives;
@@ -16,6 +20,10 @@ namespace Windows.UI.Xaml.Controls
 	{
 		private Windows.Media.Playback.MediaPlayer _mediaPlayer;
 		private bool _isScrubbing = false;
+		
+		private ICommand _selectAudioTrackCommand;
+		private ICommand _selectSubtitleTrackCommand;
+		
 		private SerialDisposable _subscriptions = new SerialDisposable();
 		
 		internal void SetMediaPlayer(Windows.Media.Playback.MediaPlayer mediaPlayer)
@@ -34,10 +42,14 @@ namespace Windows.UI.Xaml.Controls
 		{
 			_subscriptions.Disposable = null;
 
+			_selectAudioTrackCommand = new DelegateCommand<AudioTrack>(SelectAudioTrack);
+			_selectSubtitleTrackCommand = new DelegateCommand<TimedMetadataTrack>(SelectSubtitleTrack);
+
 			_mediaPlayer.PlaybackSession.PlaybackStateChanged += OnPlaybackStateChanged;
 			_mediaPlayer.PlaybackSession.BufferingProgressChanged += OnBufferingProgressChanged;
 			_mediaPlayer.PlaybackSession.NaturalDurationChanged += OnNaturalDurationChanged;
 			_mediaPlayer.PlaybackSession.PositionChanged += OnPositionChanged;
+			_mediaPlayer.SourceChanged += OnSourceChanged;
 
 			_playPauseButton.Maybe(p => p.Click += PlayPause);
 			_playPauseButtonOnLeft.Maybe(p => p.Click += PlayPause);
@@ -150,6 +162,105 @@ namespace Windows.UI.Xaml.Controls
 				var remaining = _mediaPlayer.PlaybackSession.NaturalDuration - elapsed;
 				_timeRemainingElement.Text = $"{remaining.TotalHours:0}:{remaining.Minutes:00}:{remaining.Seconds:00}";
 			});
+		}
+
+		private void OnSourceChanged(Windows.Media.Playback.MediaPlayer sender, object args)
+		{
+			UpdateAudioTracks();
+			UpdateSubtitleTracks();
+		}
+
+		private void UpdateSubtitleTracks()
+		{
+			Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+			{
+				_ccSelectionButton.Visibility = Visibility.Collapsed;
+
+				if (_ccSelectionButton.Flyout is MenuFlyout ccFlyout)
+				{
+					ccFlyout.Items.Clear();
+				}
+
+				if (_mediaPlayer.InnerSource.TimedMetadataTracks.Count > 0)
+				{
+					_ccSelectionButton.Flyout = new MenuFlyout();
+					var hasSelection = false;
+
+					for (int index = 0; index < _mediaPlayer.InnerSource.TimedMetadataTracks.Count; index++)
+					{
+						var subtitle = _mediaPlayer.InnerSource.TimedMetadataTracks[index];
+						var isSelected = _mediaPlayer.InnerSource.TimedMetadataTracks.GetPresentationMode((uint)index) == TimedMetadataTrackPresentationMode.PlatformPresented;
+						hasSelection = hasSelection || isSelected;
+
+						((MenuFlyout)_ccSelectionButton.Flyout).Items.Add(new MenuFlyoutItem()
+						{
+							Text = isSelected ? $"{subtitle.Label} (On)" : subtitle.Label,
+							Command = _selectSubtitleTrackCommand,
+							CommandParameter = subtitle
+						});
+					}
+
+					if (hasSelection)
+					{
+						((MenuFlyout)_ccSelectionButton.Flyout).Items.Add(new MenuFlyoutItem()
+						{
+							Text = "Off",
+							Command = _selectSubtitleTrackCommand,
+							CommandParameter = null
+						});
+					}
+
+					_ccSelectionButton.Visibility = Visibility.Visible;
+				}
+			});
+		}
+
+		private void UpdateAudioTracks()
+		{
+			Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+			{
+				_audioTracksSelectionButton.Visibility = Visibility.Collapsed;
+
+				if (_audioTracksSelectionButton.Flyout is MenuFlyout audioFlyout)
+				{
+					audioFlyout.Items.Clear();
+				}
+
+				if (_mediaPlayer.InnerSource.AudioTracks.Count > 1)
+				{
+					var flyoutItems = _mediaPlayer.InnerSource.AudioTracks
+						.Select((audio, index) => new MenuFlyoutItem()
+						{
+							Text = index == _mediaPlayer.InnerSource.AudioTracks.SelectedIndex ? $"{audio.Label} (On)" : audio.Label,
+							Command = _selectAudioTrackCommand,
+							CommandParameter = audio
+						});
+
+					_audioTracksSelectionButton.Flyout = new MenuFlyout();
+
+					((MenuFlyout)_audioTracksSelectionButton.Flyout).Items.AddRange(flyoutItems);
+
+					_audioTracksSelectionButton.Visibility = Visibility.Visible;
+				}
+			});
+		}
+
+		private void SelectAudioTrack(AudioTrack track)
+		{
+			_mediaPlayer.InnerSource.AudioTracks.SelectedIndex = _mediaPlayer.InnerSource.AudioTracks.IndexOf(track);
+			UpdateAudioTracks();
+		}
+
+		private void SelectSubtitleTrack(TimedMetadataTrack track)
+		{
+			foreach(var sub in _mediaPlayer.InnerSource.TimedMetadataTracks)
+			{
+				_mediaPlayer.InnerSource.TimedMetadataTracks.SetPresentationMode(
+					(uint)_mediaPlayer.InnerSource.TimedMetadataTracks.IndexOf(sub),
+					sub.Equals(track) ? TimedMetadataTrackPresentationMode.PlatformPresented : TimedMetadataTrackPresentationMode.Disabled);
+			}
+
+			UpdateSubtitleTracks();
 		}
 
 		private void PlayPause(object sender, RoutedEventArgs e)

@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using AVFoundation;
@@ -20,11 +21,12 @@ namespace Windows.Media.Playback
 		private NSObject _itemFailedToPlayToEndTimeNotification;
 		private NSObject _playbackStalledNotification;
 		private NSObject _didPlayToEndTimeNotification;
+		
+		private static NSString RateObservationContext = new NSString("AVCustomEditPlayerViewControllerRateObservationContext");
+		private static NSString OptionIdKey = new NSString("MediaSelectionOptionsPersistentID");
 
-		public static NSString RateObservationContext = new NSString("AVCustomEditPlayerViewControllerRateObservationContext");
-
-		const string MsAppXScheme = "ms-appx";
-		const string MsAppDataScheme = "ms-appdata";
+		private const string MsAppXScheme = "ms-appx";
+		private const string MsAppDataScheme = "ms-appdata";
 
 		public IVideoSurface RenderSurface { get; } = new VideoSurface();
 
@@ -108,7 +110,7 @@ namespace Windows.Media.Playback
 			PlaybackSession.NaturalDuration = TimeSpan.Zero;
 			PlaybackSession.PositionFromPlayer = TimeSpan.Zero;
 			
-			if (Source == null)
+			if (InnerSource?.Source == null)
 			{
 				return;
 			}
@@ -121,7 +123,7 @@ namespace Windows.Media.Playback
 
 				PlaybackSession.PlaybackState = MediaPlaybackState.Opening;
 
-				var nsAsset = AVAsset.FromUrl(DecodeUri(((MediaSource)Source).Uri));
+				var nsAsset = AVAsset.FromUrl(GetSourceUri(InnerSource.Source.Uri));
 				var streamingItem = AVPlayerItem.FromAsset(nsAsset);
 
 				_player.CurrentItem?.RemoveObserver(this, new NSString("duration"), _player.Handle);
@@ -138,9 +140,12 @@ namespace Windows.Media.Playback
 
 				// Adapt pitch to prevent "metallic echo" when changing playback rate
 				_player.CurrentItem.AudioTimePitchAlgorithm = AVAudioTimePitchAlgorithm.TimeDomain;
+
+				// Check for supported subtitles and languages
+				ListAvailableAudioTracks();
+				ListAvailableSubtitles();
 				
 				MediaOpened?.Invoke(this, null);
-
 			}
 			catch (Exception ex)
 			{
@@ -148,7 +153,90 @@ namespace Windows.Media.Playback
 			}
 		}
 
-		private static NSUrl DecodeUri(Uri uri)
+		private void ListAvailableAudioTracks()
+		{
+			var audioTracks = _player.CurrentItem.Asset.MediaSelectionGroupForMediaCharacteristic(AVMediaCharacteristic.Audible);
+
+			InnerSource.AudioTracks.Clear();
+			InnerSource.AudioTracks.SelectedIndexChanged -= OnAudioTracksChanged;
+
+			if (audioTracks?.Options != null)
+			{
+				foreach (var audio in audioTracks.Options)
+				{
+					InnerSource.AudioTracks.Add(new AudioTrack()
+					{
+						Id = audio.PropertyList.ValueForKey(OptionIdKey).ToString(),
+						Label = audio.DisplayName,
+						Language = audio.Locale?.LanguageCode,
+						Name = audio.DisplayName,
+						PlaybackItem = InnerSource
+					});
+				}
+
+				InnerSource.AudioTracks.SelectedIndexChanged += OnAudioTracksChanged;
+			}
+		}
+
+		private void OnAudioTracksChanged(ISingleSelectMediaTrackList sender, object args)
+		{
+			var param = args as AudioTrack;
+			
+			if (param != null)
+			{
+				var audioTracks = _player.CurrentItem.Asset.MediaSelectionGroupForMediaCharacteristic(AVMediaCharacteristic.Audible);
+				var track = audioTracks?.Options?.SingleOrDefault(o => o.PropertyList.ValueForKey(OptionIdKey).ToString().Equals(param.Id));
+				
+				if (track != null)
+				{
+					_player.CurrentItem.SelectMediaOption(track, audioTracks);
+				}
+			}
+		}
+
+		private void ListAvailableSubtitles()
+		{
+			var subtitles = _player.CurrentItem.Asset.MediaSelectionGroupForMediaCharacteristic(AVMediaCharacteristic.Legible);
+
+			// By default, no subtitle
+			if (subtitles != null)
+			{
+				_player.CurrentItem.SelectMediaOption(null, subtitles);
+			}
+
+			InnerSource.TimedMetadataTracks.Clear();
+			InnerSource.TimedMetadataTracks.PresentationModeChanged -= OnPresentationModeChanged;
+
+			if (subtitles?.Options != null)
+			{
+				foreach (var subtitle in subtitles.Options)
+				{
+					InnerSource.TimedMetadataTracks.Add(new TimedMetadataTrack(subtitle.PropertyList.ValueForKey(OptionIdKey).ToString(), subtitle.Locale?.LanguageCode, TimedMetadataKind.Caption)
+					{
+						Label = subtitle.ValueForKey(new NSString("title"))?.ToString() ?? subtitle.DisplayName,
+						Name = subtitle.DisplayName,
+						PlaybackItem = InnerSource,
+						TimedMetadataKind = TimedMetadataKind.Caption
+					});
+				}
+
+				InnerSource.TimedMetadataTracks.PresentationModeChanged += OnPresentationModeChanged;
+			}
+		}
+
+		private void OnPresentationModeChanged(MediaPlaybackTimedMetadataTrackList sender, TimedMetadataPresentationModeChangedEventArgs args)
+		{
+			var subtitles = _player.CurrentItem.Asset.MediaSelectionGroupForMediaCharacteristic(AVMediaCharacteristic.Legible);
+			_player.CurrentItem.SelectMediaOption(null, subtitles);
+
+			if (args.NewPresentationMode == TimedMetadataTrackPresentationMode.PlatformPresented)
+			{
+				var track = subtitles?.Options?.SingleOrDefault(o => o.PropertyList.ValueForKey(OptionIdKey).ToString().Equals(args.Track.Id));
+				_player.CurrentItem.SelectMediaOption(track, subtitles);
+			}
+		}
+
+		private static NSUrl GetSourceUri(Uri uri)
 		{
 			if (!uri.IsAbsoluteUri || uri.Scheme == "")
 			{

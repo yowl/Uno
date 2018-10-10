@@ -15,19 +15,19 @@ namespace Windows.Media.Playback
 		}
 		public override bool CanConvertTo(ITypeDescriptorContext context, Type sourceType)
 		{
-			return sourceType == typeof(MediaSource) || base.CanConvertFrom(context, sourceType);
+			return sourceType == typeof(MediaSource) || sourceType == typeof(MediaPlaybackItem) || base.CanConvertFrom(context, sourceType);
 		}
 
 		public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value)
 		{
 			if (value is string stringValue && !string.IsNullOrWhiteSpace(stringValue))
 			{
-				return MediaSource.CreateFromUri(new Uri(stringValue));
+				return MediaPlaybackItem.FindFromMediaSource(MediaSource.CreateFromUri(new Uri(stringValue)));
 			}
 
 			if (value is Uri uriValue)
 			{
-				return MediaSource.CreateFromUri(uriValue);
+				return MediaPlaybackItem.FindFromMediaSource(MediaSource.CreateFromUri(uriValue));
 			}
 
 			return base.ConvertFrom(context, culture, value);
@@ -35,18 +35,19 @@ namespace Windows.Media.Playback
 
 		public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType)
 		{
-			if (destinationType != null && value is MediaSource source)
+			if (destinationType != null && value is MediaPlaybackItem item)
 			{
 				if (destinationType == typeof(string))
 				{
-					return source.Uri.ToString();
+					return item.Source?.Uri.ToString();
 				}
 
 				if (destinationType == typeof(Uri))
 				{
-					return source.Uri;
+					return item.Source?.Uri;
 				}
 			}
+
 			return base.ConvertTo(context, culture, value, destinationType);
 		}
 	}

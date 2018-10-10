@@ -2451,7 +2451,7 @@ namespace Uno.UI.SourceGenerators.XamlGenerator
 					return "new Windows.UI.Xaml.Controls.SymbolIcon { Symbol = Windows.UI.Xaml.Controls.Symbol." + memberValue + "}";
 
 				case "Windows.Media.Playback.IMediaPlaybackSource":
-					return "Windows.Media.Core.MediaSource.CreateFromUri(new Uri(\"" + memberValue + "\"))";
+					return "Windows.Media.Playback.MediaPlaybackItem.FindFromMediaSource(Windows.Media.Core.MediaSource.CreateFromUri(new Uri(\"" + memberValue + "\")))";
 			}
 
 			var isEnum = propertyType

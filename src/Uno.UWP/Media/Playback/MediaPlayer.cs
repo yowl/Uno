@@ -2,6 +2,7 @@
 
 using System;
 using Windows.Foundation;
+using Windows.Media.Core;
 
 namespace Windows.Media.Playback
 {
@@ -22,6 +23,7 @@ namespace Windows.Media.Playback
 
 				_source = value;
 
+				UpdateInnerSource();
 				InitializeSource();
 
 				SourceChanged?.Invoke(this, null);
@@ -67,6 +69,20 @@ namespace Windows.Media.Playback
 
 		public MediaPlaybackSession PlaybackSession { get; }
 
+		internal MediaPlaybackItem InnerSource { get; private set; }
+
+		private void UpdateInnerSource()
+		{
+			if (Source is MediaPlaybackItem item)
+			{
+				InnerSource = item;
+			}
+
+			if (Source is MediaSource mediaSource)
+			{
+				InnerSource = MediaPlaybackItem.FindFromMediaSource(mediaSource);
+			}
+		}
 		#endregion
 
 		#region Events
