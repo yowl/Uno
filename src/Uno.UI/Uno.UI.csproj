@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
 	<PropertyGroup>
 		<TargetFrameworks>xamarinmac20;MonoAndroid80;xamarinios10;net46;netstandard2.0</TargetFrameworks>
 		<TargetFrameworksCI>MonoAndroid71;MonoAndroid80;xamarinios10;net46;netstandard2.0;xamarinmac20</TargetFrameworksCI>
@@ -29,6 +29,11 @@
 
 	<Import Project="$(MSBuildSDKExtrasTargets)" Condition="Exists('$(MSBuildSDKExtrasTargets)')" />
 	<Import Project="..\Uno.CrossTargetting.props" />
+
+	<ItemGroup>
+		<UpToDateCheckInput Include="**\*.xaml" Exclude="bin\**\*.xaml;obj\**\*.xaml;" />
+		<UpToDateCheckInput Include="**\*.cs" Exclude="bin\**\*.cs;obj\**\*.cs;" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<Compile Remove="Mixins\**\*.cs" />
@@ -306,6 +311,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<None Update="C:\s\nv.github\uno-2\src\Uno.UI\UI\Xaml\Style\Generic\Generic.NavigationView.xaml">
+		  <Generator>MSBuild:Compile</Generator>
+		</None>
 		<None Update="Mixins\macOS\FrameworkElementMixins.tt">
 		  <Generator>TextTemplatingFileGenerator</Generator>
 		  <LastGenOutput>FrameworkElementMixins.g.cs</LastGenOutput>
@@ -327,6 +335,9 @@
 		  <Generator>TextTemplatingFileGenerator</Generator>
 		  <LastGenOutput>IFrameworkElementImplementation.macOS.cs</LastGenOutput>
 		</None>
+		<None Update="UI\Xaml\Style\Generic\Generic.NavigationView.xaml">
+		  <Generator>MSBuild:Compile</Generator>
+		</None>
 	</ItemGroup>
 
 	<ItemGroup>
@@ -339,7 +350,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <None Remove="Extensions\UIImageExtensions.iOS.cs" />
+	  <UpToDateCheckInput Remove="UI\Xaml\Controls\NavigationView\NavigationViewItemPresenter.cs" />
+	  <UpToDateCheckInput Remove="UI\Xaml\Controls\NavigationView\NavigationViewTemplateSettings.cs" />
 	</ItemGroup>
 
 	<Target Name="BuildManualDependencies" BeforeTargets="_UnoSourceGenerator" Condition="!Exists($(T4Bin))">

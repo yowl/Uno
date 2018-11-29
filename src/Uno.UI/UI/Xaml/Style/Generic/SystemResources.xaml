@@ -846,8 +846,25 @@
 	<x:Double x:Key="PaneToggleButtonHeight">44</x:Double>
     <x:Double x:Key="PaneToggleButtonWidth">48</x:Double>
 
-    <Thickness x:Key="NavigationViewToggleBorderThickness">1</Thickness>
+    <win:RevealBackgroundBrush x:Key="SystemControlBackgroundBaseLowRevealBackgroundBrush" TargetTheme="Light" Color="{StaticResource SystemRevealBaseLowColor}" FallbackColor="{StaticResource SystemBaseLowColor}" />
+    <xamarin:SolidColorBrush x:Key="SystemControlBackgroundBaseLowRevealBackgroundBrush" Color="{StaticResource SystemBaseLowColor}" />
 
+	<win:RevealBackgroundBrush x:Key="SystemControlBackgroundBaseMediumLowRevealBaseLowBackgroundBrush" TargetTheme="Light" Color="{StaticResource SystemRevealBaseLowColor}" FallbackColor="{StaticResource SystemBaseMediumLowColor}" />
+	<xamarin:SolidColorBrush x:Key="SystemControlBackgroundBaseMediumLowRevealBaseLowBackgroundBrush" Color="{StaticResource SystemBaseMediumLowColor}" />
 
+	<win:RevealBorderBrush x:Key="SystemControlBackgroundTransparentRevealBorderBrush" TargetTheme="Light" Color="Transparent" FallbackColor="Transparent" />
+	<xamarin:SolidColorBrush x:Key="SystemControlBackgroundTransparentRevealBorderBrush" Color="Transparent" />
+
+	<win:RevealBorderBrush x:Key="SystemControlHighlightBaseMediumLowRevealBorderBrush" TargetTheme="Light" Color="{StaticResource SystemRevealBaseMediumLowColor}" FallbackColor="{StaticResource SystemBaseMediumLowColor}" />
+	<xamarin:SolidColorBrush x:Key="SystemControlHighlightBaseMediumLowRevealBorderBrush" Color="{StaticResource SystemBaseMediumLowColor}" />
+
+	<win:RevealBorderBrush x:Key="SystemControlHighlightTransparentRevealBorderBrush" TargetTheme="Light" Color="Transparent" FallbackColor="Transparent" />
+	<xamarin:SolidColorBrush x:Key="SystemControlHighlightTransparentRevealBorderBrush" Color="Transparent" />
+	
+	<win:RevealBorderBrush x:Key="SystemControlHighlightAltTransparentRevealBorderBrush" TargetTheme="Light" Color="Transparent" FallbackColor="Transparent" />
+	<xamarin:SolidColorBrush x:Key="SystemControlHighlightAltTransparentRevealBorderBrush" Color="Transparent" />
+
+	<win:RevealBackgroundBrush x:Key="SystemControlHighlightBaseMediumLowRevealAccentBackgroundBrush" TargetTheme="Light" Color="{ThemeResource SystemAccentColor}" FallbackColor="{StaticResource SystemBaseMediumLowColor}" />
+	<xamarin:SolidColorBrush x:Key="SystemControlHighlightBaseMediumLowRevealAccentBackgroundBrush" Color="{StaticResource SystemBaseMediumLowColor}" />
 
 </ResourceDictionary>

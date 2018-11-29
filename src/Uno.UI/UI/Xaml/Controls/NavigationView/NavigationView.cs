@@ -5,6 +5,7 @@ using Uno.Disposables;
 using Uno.Extensions;
 using Uno.Logging;
 using Windows.ApplicationModel.Resources;
+using Windows.UI.Xaml.Data;
 
 namespace Windows.UI.Xaml.Controls
 {
@@ -19,11 +20,14 @@ namespace Windows.UI.Xaml.Controls
 		private Button _togglePaneButton;
 		private Button _navigationViewBackButton;
 		private SplitView _rootSplitView;
+		private NavigationViewList _topNavMenuItemsHost;
 
 		public NavigationView()
 		{
 			_menuItems = new ObservableVector<object>();
-			_menuItems.VectorChanged += (s, e) => _menuItemsHost?.Items.Update(_menuItems);
+			_menuItems.VectorChanged += (s, e) => OnMenuItemsChanged();
+
+			SetValue(TemplateSettingsProperty, new NavigationViewTemplateSettings());
 
 			SetValue(MenuItemsProperty, _menuItems);
 			SizeChanged += NavigationView_SizeChanged;
@@ -46,20 +50,34 @@ namespace Windows.UI.Xaml.Controls
 
 		private void UpdatePositions()
 		{
-			if (RenderSize.Width < CompactModeThresholdWidth)
+			if (PaneDisplayMode != NavigationViewPaneDisplayMode.Top)
 			{
-				UpdateCompactMode();
-			}
-			else if (RenderSize.Width > ExpandedModeThresholdWidth)
-			{
-				UpdateExpandedMode();
+				if (
+					(RenderSize.Width < CompactModeThresholdWidth && PaneDisplayMode == NavigationViewPaneDisplayMode.Auto)
+					|| PaneDisplayMode == NavigationViewPaneDisplayMode.LeftCompact
+				)
+					
+				{
+					UpdateCompactMode();
+				}
+				else if (
+					(RenderSize.Width > ExpandedModeThresholdWidth && PaneDisplayMode == NavigationViewPaneDisplayMode.Auto)
+					|| PaneDisplayMode == NavigationViewPaneDisplayMode.Left
+				)
+				{
+					UpdateExpandedMode();
+				}
+				else
+				{
+					UpdateMinimalMode();
+				}
+
+				VisualStateManager.GoToState(this, !IsPaneOpen ? "ListSizeCompact" : "ListSizeFull", true);
 			}
 			else
 			{
-				UpdateMinimalMode();
-			}
 
-			VisualStateManager.GoToState(this, !IsPaneOpen ? "ListSizeCompact" : "ListSizeFull", true);
+			}
 		}
 
 		private void UpdateMinimalMode()
@@ -126,7 +144,7 @@ namespace Windows.UI.Xaml.Controls
 				_paneContentGrid.RowDefinitions.ElementAt(1).Height = GridLengthHelper.FromPixels(0);
 			}
 
-			if (_paneTitleTextBlock != null)
+			if (_paneTitleTextBlock != null && _togglePaneButton != null)
 			{
 				_paneTitleTextBlock.Margin = IsPaneOpen ? new Thickness(_togglePaneButton.RenderSize.Width + _navigationViewBackButton.RenderSize.Width, 0, 0, 0) : new Thickness(0, 0, 0, 0);
 			}
@@ -135,6 +153,22 @@ namespace Windows.UI.Xaml.Controls
 			{
 				_togglePaneButton.Margin = new Thickness(_navigationViewBackButton.Width, 0, 0, 0);
 			}
+		}
+
+		private void OnMenuItemsChanged()
+		{
+			if (PaneDisplayMode == NavigationViewPaneDisplayMode.Top)
+			{
+				_menuItemsHost?.Items.Clear();
+				_topNavMenuItemsHost?.Items.Update(_menuItems);
+			}
+			else
+			{
+				_topNavMenuItemsHost?.Items.Clear();
+				_menuItemsHost?.Items.Update(_menuItems);
+			}
+
+			UpdateItemStates();
 		}
 
 		[Uno.NotImplemented]
@@ -160,6 +194,11 @@ namespace Windows.UI.Xaml.Controls
 			_togglePaneButton = GetTemplateChild("TogglePaneButton") as Button;
 			_navigationViewBackButton = GetTemplateChild("NavigationViewBackButton") as Button;
 			_rootSplitView = GetTemplateChild("RootSplitView") as SplitView;
+			_topNavMenuItemsHost = GetTemplateChild("TopNavMenuItemsHost") as NavigationViewList;
+
+			_topNavMenuItemsHost?.SetBinding(NavigationViewList.ItemsSourceProperty, new Binding() { Path = "MenuItemsSource", Source = this });
+
+			TemplateSettings.PaneToggleButtonVisibility = Visibility.Visible;
 
 			SetValue(SettingsItemProperty, GetTemplateChild("SettingsNavPaneItem"));
 
@@ -174,13 +213,17 @@ namespace Windows.UI.Xaml.Controls
 				throw new InvalidOperationException("NavigationViewBackButton must have a Width and Height set");
 			}
 
-
-			if (_menuItemsHost != null)
+			if (MenuItemsSource == null)
 			{
-				if (MenuItemsSource == null)
+				if (PaneDisplayMode != NavigationViewPaneDisplayMode.Top && _menuItemsHost != null)
 				{
 					_menuItemsHost.Items.Clear();
 					_menuItemsHost.Items.AddRange(_menuItems);
+				}
+				else if(_topNavMenuItemsHost != null) 
+				{
+					_topNavMenuItemsHost.Items.Clear();
+					_topNavMenuItemsHost.Items.AddRange(_menuItems);
 				}
 			}
 
@@ -192,6 +235,7 @@ namespace Windows.UI.Xaml.Controls
 			OnIsSettingsVisibleChanged();
 			RegisterEvents();
 			UpdatePositions();
+			UpdateItemStates();
 		}
 
 		private void RegisterEvents()
@@ -249,6 +293,11 @@ namespace Windows.UI.Xaml.Controls
 		private void UnregisterEvents()
 		{
 			_subscriptions.Disposable = null;
+		}
+
+		private void OnMenuItemsSourceChanged(object oldValue, object newValue)
+		{
+
 		}
 
 		private void OnMenuItemsHost_ItemClick(object sender, ItemClickEventArgs e)
@@ -373,30 +422,67 @@ namespace Windows.UI.Xaml.Controls
 
 		private void OnSelectedItemChanged()
 		{
-			void updateOpacity(NavigationViewItem item)
-			{
-				if (item.SelectionIndicator != null)
-				{
-					item.SelectionIndicator.Opacity = SelectedItem == item ? 1 : 0;
-				}
-			}
-
 			SelectionChanged?.Invoke(
 				this,
-				new NavigationViewSelectionChangedEventArgs {
-					IsSettingsSelected = SelectedItem == SettingsItem, SelectedItem = SelectedItem
+				new NavigationViewSelectionChangedEventArgs
+				{
+					IsSettingsSelected = SelectedItem == SettingsItem,
+					SelectedItem = SelectedItem
 				}
 			);
 
-			foreach (var item in MenuItems.OfType<NavigationViewItem>())
-			{
-				updateOpacity(item);
-			}
+			UpdateItemStates();
 
 			if (SettingsItem is NavigationViewItem settings)
 			{
-				updateOpacity(settings);
+				UpdateItemState(settings);
 				settings.IsSelected = SelectedItem == settings;
+			}
+		}
+
+		void UpdateItemState(NavigationViewItem item)
+		{
+			if (item.SelectionIndicator != null)
+			{
+				item.SelectionIndicator.Opacity = SelectedItem == item ? 1 : 0;
+			}
+
+			VisualStateManager.GoToState(item, GetItemVisualState(), true);
+		}
+
+		string GetItemVisualState()
+		{
+			switch (PaneDisplayMode)
+			{
+				default:
+				case NavigationViewPaneDisplayMode.Auto:
+				case NavigationViewPaneDisplayMode.Left:
+				case NavigationViewPaneDisplayMode.LeftCompact:
+				case NavigationViewPaneDisplayMode.LeftMinimal:
+					return "OnLeftNavigation";
+
+				case NavigationViewPaneDisplayMode.Top:
+					return "OnTopNavigationPrimary";
+			}
+		}
+
+		private void UpdateItemStates()
+		{
+			if (MenuItemsSource == null)
+			{
+				foreach (var item in MenuItems.OfType<NavigationViewItem>())
+				{
+					UpdateItemState(item);
+				}
+			}
+			else
+			{
+				var list = PaneDisplayMode == NavigationViewPaneDisplayMode.Top ? _topNavMenuItemsHost : _menuItemsHost;
+
+				foreach (var item in list.Items.OfType<NavigationViewItem>())
+				{
+					UpdateItemState(item);
+				}
 			}
 		}
 
@@ -428,6 +514,41 @@ namespace Windows.UI.Xaml.Controls
 			}
 
 			DisplayModeChanged?.Invoke(this, new NavigationViewDisplayModeChangedEventArgs { DisplayMode = DisplayMode });
+		}
+
+		private void OnPaneDisplayModeChanged(NavigationViewPaneDisplayMode oldValue, NavigationViewPaneDisplayMode newValue)
+		{
+			switch (newValue)
+			{
+				case NavigationViewPaneDisplayMode.Auto:
+					TemplateSettings.LeftPaneVisibility = Visibility.Visible;
+					break;
+
+				case NavigationViewPaneDisplayMode.Left:
+					DisplayMode = NavigationViewDisplayMode.Expanded;
+					TemplateSettings.LeftPaneVisibility = Visibility.Visible;
+					TemplateSettings.TopPaneVisibility = Visibility.Collapsed;
+					break;
+
+				case NavigationViewPaneDisplayMode.LeftCompact:
+					DisplayMode = NavigationViewDisplayMode.Compact;
+					TemplateSettings.LeftPaneVisibility = Visibility.Visible;
+					TemplateSettings.TopPaneVisibility = Visibility.Collapsed;
+					break;
+
+				case NavigationViewPaneDisplayMode.LeftMinimal:
+					TemplateSettings.LeftPaneVisibility = Visibility.Visible;
+					TemplateSettings.TopPaneVisibility = Visibility.Collapsed;
+					DisplayMode = NavigationViewDisplayMode.Minimal;
+					break;
+
+				case NavigationViewPaneDisplayMode.Top:
+					TemplateSettings.LeftPaneVisibility = Visibility.Collapsed;
+					TemplateSettings.TopPaneVisibility = Visibility.Visible;
+					break;
+			}
+
+			UpdatePositions();
 		}
 	}
 }

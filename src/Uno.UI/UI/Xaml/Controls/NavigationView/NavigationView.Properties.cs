@@ -154,6 +154,175 @@ namespace Windows.UI.Xaml.Controls
 			set => SetValue(IsBackButtonVisibleProperty, value);
 		}
 
+		[global::Uno.NotImplemented]
+		public NavigationViewShoulderNavigationEnabled ShoulderNavigationEnabled
+		{
+			get
+			{
+				return (NavigationViewShoulderNavigationEnabled)this.GetValue(ShoulderNavigationEnabledProperty);
+			}
+			set
+			{
+				this.SetValue(ShoulderNavigationEnabledProperty, value);
+			}
+		}
+
+		[global::Uno.NotImplemented]
+		public NavigationViewSelectionFollowsFocus SelectionFollowsFocus
+		{
+			get
+			{
+				return (NavigationViewSelectionFollowsFocus)this.GetValue(SelectionFollowsFocusProperty);
+			}
+			set
+			{
+				this.SetValue(SelectionFollowsFocusProperty, value);
+			}
+		}
+
+		public UIElement PaneHeader
+		{
+			get
+			{
+				return (UIElement)this.GetValue(PaneHeaderProperty);
+			}
+			set
+			{
+				this.SetValue(PaneHeaderProperty, value);
+			}
+		}
+
+		public NavigationViewPaneDisplayMode PaneDisplayMode
+		{
+			get
+			{
+				return (NavigationViewPaneDisplayMode)this.GetValue(PaneDisplayModeProperty);
+			}
+			set
+			{
+				this.SetValue(PaneDisplayModeProperty, value);
+			}
+		}
+
+		public UIElement PaneCustomContent
+		{
+			get
+			{
+				return (UIElement)this.GetValue(PaneCustomContentProperty);
+			}
+			set
+			{
+				this.SetValue(PaneCustomContentProperty, value);
+			}
+		}
+
+		[global::Uno.NotImplemented]
+		public NavigationViewOverflowLabelMode OverflowLabelMode
+		{
+			get
+			{
+				return (NavigationViewOverflowLabelMode)this.GetValue(OverflowLabelModeProperty);
+			}
+			set
+			{
+				this.SetValue(OverflowLabelModeProperty, value);
+			}
+		}
+
+		public bool IsPaneVisible
+		{
+			get
+			{
+				return (bool)this.GetValue(IsPaneVisibleProperty);
+			}
+			set
+			{
+				this.SetValue(IsPaneVisibleProperty, value);
+			}
+		}
+
+		public UIElement ContentOverlay
+		{
+			get
+			{
+				return (UIElement)this.GetValue(ContentOverlayProperty);
+			}
+			set
+			{
+				this.SetValue(ContentOverlayProperty, value);
+			}
+		}
+
+		public NavigationViewTemplateSettings TemplateSettings
+		{
+			get
+			{
+				return (NavigationViewTemplateSettings)this.GetValue(TemplateSettingsProperty);
+			}
+		}
+
+		public static DependencyProperty IsPaneVisibleProperty { get; } =
+		Windows.UI.Xaml.DependencyProperty.Register(
+			"IsPaneVisible", typeof(bool),
+			typeof(NavigationView),
+			new FrameworkPropertyMetadata(default(bool)));
+
+		[global::Uno.NotImplemented]
+		public static DependencyProperty OverflowLabelModeProperty { get; } =
+		Windows.UI.Xaml.DependencyProperty.Register(
+			"OverflowLabelMode", typeof(NavigationViewOverflowLabelMode),
+			typeof(NavigationView),
+			new FrameworkPropertyMetadata(default(NavigationViewOverflowLabelMode)));
+
+		public static DependencyProperty PaneCustomContentProperty { get; } =
+		Windows.UI.Xaml.DependencyProperty.Register(
+			"PaneCustomContent", typeof(UIElement),
+			typeof(NavigationView),
+			new FrameworkPropertyMetadata(default(UIElement)));
+
+		public static DependencyProperty PaneDisplayModeProperty { get; } =
+		Windows.UI.Xaml.DependencyProperty.Register(
+			nameof(PaneDisplayMode),
+			typeof(NavigationViewPaneDisplayMode),
+			typeof(NavigationView),
+			new FrameworkPropertyMetadata(
+				NavigationViewPaneDisplayMode.Auto,
+				propertyChangedCallback: (s, e) => (s as NavigationView)?.OnPaneDisplayModeChanged((NavigationViewPaneDisplayMode)e.OldValue, (NavigationViewPaneDisplayMode)e.NewValue)
+			)
+		);
+
+		public static DependencyProperty PaneHeaderProperty { get; } =
+		Windows.UI.Xaml.DependencyProperty.Register(
+			"PaneHeader", typeof(UIElement),
+			typeof(NavigationView),
+			new FrameworkPropertyMetadata(default(UIElement)));
+
+		[global::Uno.NotImplemented]
+		public static DependencyProperty SelectionFollowsFocusProperty { get; } =
+		Windows.UI.Xaml.DependencyProperty.Register(
+			"SelectionFollowsFocus", typeof(NavigationViewSelectionFollowsFocus),
+			typeof(NavigationView),
+			new FrameworkPropertyMetadata(default(NavigationViewSelectionFollowsFocus)));
+
+		[global::Uno.NotImplemented]
+		public static DependencyProperty ShoulderNavigationEnabledProperty { get; } =
+		Windows.UI.Xaml.DependencyProperty.Register(
+			"ShoulderNavigationEnabled", typeof(NavigationViewShoulderNavigationEnabled),
+			typeof(NavigationView),
+			new FrameworkPropertyMetadata(default(NavigationViewShoulderNavigationEnabled)));
+
+		public static DependencyProperty TemplateSettingsProperty { get; } =
+		Windows.UI.Xaml.DependencyProperty.Register(
+			"TemplateSettings", typeof(NavigationViewTemplateSettings),
+			typeof(NavigationView),
+			new FrameworkPropertyMetadata(default(NavigationViewTemplateSettings)));
+
+		public static DependencyProperty ContentOverlayProperty { get; } =
+		Windows.UI.Xaml.DependencyProperty.Register(
+			"ContentOverlay", typeof(UIElement),
+			typeof(NavigationView),
+			new FrameworkPropertyMetadata(default(UIElement)));
+
 		[Uno.NotImplemented]
 		public static DependencyProperty AlwaysShowHeaderProperty { get; } =
 		Windows.UI.Xaml.DependencyProperty.Register(
@@ -269,12 +438,15 @@ namespace Windows.UI.Xaml.Controls
 			typeMetadata: new FrameworkPropertyMetadata(null)
 		);
 
-		[Uno.NotImplemented]
 		public static DependencyProperty MenuItemsSourceProperty { get; } =
 		Windows.UI.Xaml.DependencyProperty.Register(
-			"MenuItemsSource", typeof(object),
+			nameof(MenuItemsSource),
+			typeof(object),
 			typeof(NavigationView),
-			new FrameworkPropertyMetadata(default(object)));
+			new FrameworkPropertyMetadata(
+				null,
+				propertyChangedCallback: (s, e) => (s as NavigationView)?.OnMenuItemsSourceChanged(e.OldValue, e.NewValue))
+		);
 
 		public static DependencyProperty OpenPaneLengthProperty { get; } =
 		Windows.UI.Xaml.DependencyProperty.Register(

@@ -307,24 +307,31 @@ namespace Windows.UI.Xaml.Controls
 		{
 			var extent = EstimatePanelExtent();
 
-			if (ScrollOrientation == Orientation.Vertical)
-			{
-				return new Size(
-					AvailableBreadth,
+			var ret = ScrollOrientation == Orientation.Vertical
+				? new Size(
+					double.IsInfinity(AvailableBreadth) ? _materializedLines.Select(l => l.FirstView.ActualWidth).MaxOrDefault() : AvailableBreadth,
 					double.IsInfinity(_availableSize.Height) ? extent : Max(extent, _availableSize.Height)
-				);
-			}
-			else
-			{
-				return new Size(
+				)
+				: new Size(
 					double.IsInfinity(_availableSize.Width) ? extent : Max(extent, _availableSize.Width),
-					AvailableBreadth
+					double.IsInfinity(AvailableBreadth) ? _materializedLines.Select(l => l.FirstView.ActualHeight).MaxOrDefault() : AvailableBreadth
 				);
+
+			if (this.Log().IsEnabled(LogLevel.Debug))
+			{
+				this.Log().LogDebug($"{GetMethodTag()} => {extent} -> {ret} {ScrollOrientation} {_availableSize.Height} {double.IsInfinity(_availableSize.Height)}");
 			}
+
+			return ret;
 		}
 
 		private double EstimatePanelExtent()
 		{
+			if (this.Log().IsEnabled(LogLevel.Debug))
+			{
+				this.Log().LogDebug($"{GetMethodTag()} Begin");
+			}
+
 			// Estimate remaining extent based on current average line height and remaining unmaterialized items
 			var lastIndexPath = GetLastMaterializedIndexPath();
 			if (lastIndexPath == null)
