@@ -50,13 +50,49 @@ namespace Windows.UI.Xaml.Controls
 
 		private void UpdatePositions()
 		{
+			switch (PaneDisplayMode)
+			{
+				case NavigationViewPaneDisplayMode.Auto:
+					TemplateSettings.LeftPaneVisibility = Visibility.Visible;
+					TemplateSettings.TopPaneVisibility = Visibility.Collapsed;
+					TemplateSettings.PaneToggleButtonVisibility = Visibility.Visible;
+					break;
+
+				case NavigationViewPaneDisplayMode.Left:
+					DisplayMode = NavigationViewDisplayMode.Expanded;
+					TemplateSettings.LeftPaneVisibility = Visibility.Visible;
+					TemplateSettings.TopPaneVisibility = Visibility.Collapsed;
+					TemplateSettings.PaneToggleButtonVisibility = Visibility.Visible;
+					break;
+
+				case NavigationViewPaneDisplayMode.LeftCompact:
+					DisplayMode = NavigationViewDisplayMode.Compact;
+					TemplateSettings.LeftPaneVisibility = Visibility.Visible;
+					TemplateSettings.TopPaneVisibility = Visibility.Collapsed;
+					TemplateSettings.PaneToggleButtonVisibility = Visibility.Visible;
+					break;
+
+				case NavigationViewPaneDisplayMode.LeftMinimal:
+					TemplateSettings.LeftPaneVisibility = Visibility.Visible;
+					TemplateSettings.TopPaneVisibility = Visibility.Collapsed;
+					DisplayMode = NavigationViewDisplayMode.Minimal;
+					TemplateSettings.PaneToggleButtonVisibility = Visibility.Visible;
+					break;
+
+				case NavigationViewPaneDisplayMode.Top:
+					TemplateSettings.LeftPaneVisibility = Visibility.Collapsed;
+					TemplateSettings.TopPaneVisibility = Visibility.Visible;
+					TemplateSettings.PaneToggleButtonVisibility = Visibility.Collapsed;
+					break;
+			}
+
+
 			if (PaneDisplayMode != NavigationViewPaneDisplayMode.Top)
 			{
 				if (
 					(RenderSize.Width < CompactModeThresholdWidth && PaneDisplayMode == NavigationViewPaneDisplayMode.Auto)
 					|| PaneDisplayMode == NavigationViewPaneDisplayMode.LeftCompact
 				)
-					
 				{
 					UpdateCompactMode();
 				}
@@ -168,7 +204,7 @@ namespace Windows.UI.Xaml.Controls
 				_menuItemsHost?.Items.Update(_menuItems);
 			}
 
-			UpdateItemStates();
+			UpdateItemsStates();
 		}
 
 		[Uno.NotImplemented]
@@ -235,7 +271,7 @@ namespace Windows.UI.Xaml.Controls
 			OnIsSettingsVisibleChanged();
 			RegisterEvents();
 			UpdatePositions();
-			UpdateItemStates();
+			UpdateItemsStates();
 		}
 
 		private void RegisterEvents()
@@ -431,7 +467,7 @@ namespace Windows.UI.Xaml.Controls
 				}
 			);
 
-			UpdateItemStates();
+			UpdateItemsStates();
 
 			if (SettingsItem is NavigationViewItem settings)
 			{
@@ -440,14 +476,17 @@ namespace Windows.UI.Xaml.Controls
 			}
 		}
 
-		void UpdateItemState(NavigationViewItem item)
+		internal void UpdateItemState(NavigationViewItemBase itemBase)
 		{
-			if (item.SelectionIndicator != null)
+			if (itemBase is NavigationViewItem item)
 			{
-				item.SelectionIndicator.Opacity = SelectedItem == item ? 1 : 0;
-			}
+				if (item.SelectionIndicator != null)
+				{
+					item.SelectionIndicator.Opacity = SelectedItem == item ? 1 : 0;
+				}
 
-			VisualStateManager.GoToState(item, GetItemVisualState(), true);
+				VisualStateManager.GoToState(item, GetItemVisualState(), true);
+			}
 		}
 
 		string GetItemVisualState()
@@ -466,7 +505,7 @@ namespace Windows.UI.Xaml.Controls
 			}
 		}
 
-		private void UpdateItemStates()
+		internal void UpdateItemsStates()
 		{
 			if (MenuItemsSource == null)
 			{
@@ -518,36 +557,6 @@ namespace Windows.UI.Xaml.Controls
 
 		private void OnPaneDisplayModeChanged(NavigationViewPaneDisplayMode oldValue, NavigationViewPaneDisplayMode newValue)
 		{
-			switch (newValue)
-			{
-				case NavigationViewPaneDisplayMode.Auto:
-					TemplateSettings.LeftPaneVisibility = Visibility.Visible;
-					break;
-
-				case NavigationViewPaneDisplayMode.Left:
-					DisplayMode = NavigationViewDisplayMode.Expanded;
-					TemplateSettings.LeftPaneVisibility = Visibility.Visible;
-					TemplateSettings.TopPaneVisibility = Visibility.Collapsed;
-					break;
-
-				case NavigationViewPaneDisplayMode.LeftCompact:
-					DisplayMode = NavigationViewDisplayMode.Compact;
-					TemplateSettings.LeftPaneVisibility = Visibility.Visible;
-					TemplateSettings.TopPaneVisibility = Visibility.Collapsed;
-					break;
-
-				case NavigationViewPaneDisplayMode.LeftMinimal:
-					TemplateSettings.LeftPaneVisibility = Visibility.Visible;
-					TemplateSettings.TopPaneVisibility = Visibility.Collapsed;
-					DisplayMode = NavigationViewDisplayMode.Minimal;
-					break;
-
-				case NavigationViewPaneDisplayMode.Top:
-					TemplateSettings.LeftPaneVisibility = Visibility.Collapsed;
-					TemplateSettings.TopPaneVisibility = Visibility.Visible;
-					break;
-			}
-
 			UpdatePositions();
 		}
 	}

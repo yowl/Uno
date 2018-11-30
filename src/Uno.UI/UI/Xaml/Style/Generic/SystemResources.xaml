@@ -417,17 +417,22 @@
     <SolidColorBrush x:Key="BackButtonPointerOverBackgroundThemeBrush" Color="#3D000000" />
     <SolidColorBrush x:Key="BackButtonPointerOverForegroundThemeBrush" Color="#FF000000" />
     <SolidColorBrush x:Key="BackButtonPressedForegroundThemeBrush" Color="#FFFFFFFF" />
-    <SolidColorBrush x:Key="ButtonBackgroundThemeBrush" Color="#B3B6B6B6" />
-    <SolidColorBrush x:Key="ButtonBorderThemeBrush" Color="#33000000" />
-    <SolidColorBrush x:Key="ButtonDisabledBackgroundThemeBrush" Color="#66CACACA" />
-    <SolidColorBrush x:Key="ButtonDisabledBorderThemeBrush" Color="#1A000000" />
-    <SolidColorBrush x:Key="ButtonDisabledForegroundThemeBrush" Color="#66000000" />
-    <SolidColorBrush x:Key="ButtonForegroundThemeBrush" Color="#FF000000" />
-    <SolidColorBrush x:Key="ButtonPointerOverBackgroundThemeBrush" Color="#D1CDCDCD" />
-    <SolidColorBrush x:Key="ButtonPointerOverForegroundThemeBrush" Color="#FF000000" />
-    <SolidColorBrush x:Key="ButtonPressedBackgroundThemeBrush" Color="#FF000000" />
-    <SolidColorBrush x:Key="ButtonPressedForegroundThemeBrush" Color="#FFFFFFFF" />
-    <SolidColorBrush x:Key="CheckBoxBackgroundThemeBrush" Color="#CCFFFFFF" />
+	
+    <!-- Resources for Windows.UI.Xaml.Controls.Button -->
+    <StaticResource x:Key="ButtonBackground" ResourceKey="SystemControlBackgroundBaseLowBrush" />
+    <StaticResource x:Key="ButtonBackgroundPointerOver" ResourceKey="SystemControlBackgroundBaseLowBrush" />
+    <StaticResource x:Key="ButtonBackgroundPressed" ResourceKey="SystemControlBackgroundBaseMediumLowBrush" />
+    <StaticResource x:Key="ButtonBackgroundDisabled" ResourceKey="SystemControlBackgroundBaseLowBrush" />
+    <StaticResource x:Key="ButtonForeground" ResourceKey="SystemControlForegroundBaseHighBrush" />
+    <StaticResource x:Key="ButtonForegroundPointerOver" ResourceKey="SystemControlHighlightBaseHighBrush" />
+    <StaticResource x:Key="ButtonForegroundPressed" ResourceKey="SystemControlHighlightBaseHighBrush" />
+    <StaticResource x:Key="ButtonForegroundDisabled" ResourceKey="SystemControlDisabledBaseMediumLowBrush" />
+    <StaticResource x:Key="ButtonBorderBrush" ResourceKey="SystemControlForegroundTransparentBrush" />
+    <StaticResource x:Key="ButtonBorderBrushPointerOver" ResourceKey="SystemControlHighlightBaseMediumLowBrush" />
+    <StaticResource x:Key="ButtonBorderBrushPressed" ResourceKey="SystemControlHighlightTransparentBrush" />
+    <StaticResource x:Key="ButtonBorderBrushDisabled" ResourceKey="SystemControlDisabledTransparentBrush" />
+
+	<SolidColorBrush x:Key="CheckBoxBackgroundThemeBrush" Color="#CCFFFFFF" />
     <SolidColorBrush x:Key="CheckBoxBorderThemeBrush" Color="#45000000" />
     <SolidColorBrush x:Key="CheckBoxContentDisabledForegroundThemeBrush" Color="#66000000" />
     <SolidColorBrush x:Key="CheckBoxContentForegroundThemeBrush" Color="#FF000000" />
@@ -754,7 +759,17 @@
     <SolidColorBrush x:Key="ThumbPressedBorderThemeBrush" Color="#ED555555"/>
     <SolidColorBrush x:Key="TimePickerForegroundThemeBrush" Color="#FF000000" />
     <SolidColorBrush x:Key="TimePickerHeaderForegroundThemeBrush" Color="#FF000000" />
-    <SolidColorBrush x:Key="ToggleButtonBackgroundThemeBrush" Color="Transparent" />
+	
+    <StaticResource x:Key="ToggleButtonBackgroundChecked" ResourceKey="SystemControlHighlightAccentBrush" />
+    <StaticResource x:Key="ToggleButtonBackgroundCheckedPointerOver" ResourceKey="SystemControlHighlightAccentBrush" />
+    <StaticResource x:Key="ToggleButtonBackgroundCheckedPressed" ResourceKey="SystemControlHighlightBaseMediumLowBrush" />
+    <StaticResource x:Key="ToggleButtonBackgroundCheckedDisabled" ResourceKey="SystemControlBackgroundBaseLowBrush" />
+    <StaticResource x:Key="ToggleButtonForegroundChecked" ResourceKey="SystemControlHighlightAltChromeWhiteBrush" />
+    <StaticResource x:Key="ToggleButtonForegroundCheckedPointerOver" ResourceKey="SystemControlHighlightAltChromeWhiteBrush" />
+    <StaticResource x:Key="ToggleButtonForegroundCheckedPressed" ResourceKey="SystemControlHighlightAltChromeWhiteBrush" />
+    <StaticResource x:Key="ToggleButtonForegroundCheckedDisabled" ResourceKey="SystemControlDisabledBaseMediumLowBrush" />
+
+	<SolidColorBrush x:Key="ToggleButtonBackgroundThemeBrush" Color="Transparent" />
     <SolidColorBrush x:Key="ToggleButtonBorderThemeBrush" Color="#FF000000" />
     <SolidColorBrush x:Key="ToggleButtonCheckedBackgroundThemeBrush" Color="#FF000000" />
     <SolidColorBrush x:Key="ToggleButtonCheckedBorderThemeBrush" Color="#FF000000" />
@@ -866,5 +881,7 @@
 
 	<win:RevealBackgroundBrush x:Key="SystemControlHighlightBaseMediumLowRevealAccentBackgroundBrush" TargetTheme="Light" Color="{ThemeResource SystemAccentColor}" FallbackColor="{StaticResource SystemBaseMediumLowColor}" />
 	<xamarin:SolidColorBrush x:Key="SystemControlHighlightBaseMediumLowRevealAccentBackgroundBrush" Color="{StaticResource SystemBaseMediumLowColor}" />
+
+	<x:Boolean x:Key="UseSystemFocusVisuals">True</x:Boolean>
 
 </ResourceDictionary>

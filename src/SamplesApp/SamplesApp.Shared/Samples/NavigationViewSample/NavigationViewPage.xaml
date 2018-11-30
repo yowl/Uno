@@ -18,6 +18,7 @@
 						x:Name="nvSample"
 						IsSettingsVisible="true"
 						IsTabStop="False"
+						PaneDisplayMode="Top"
 						IsBackButtonVisible="Visible"
 						PaneTitle="This the pane title"
 						Header="This is header text.">

@@ -12,5 +12,15 @@ namespace Windows.UI.Xaml.Controls
 
 		protected override DependencyObject GetContainerForItemOverride()
 			=> new NavigationViewItem() { IsGeneratedContainer = true };
+
+		protected override void OnItemsChanged(object e)
+		{
+			base.OnItemsChanged(e);
+
+			if(TemplatedParent is NavigationView navView)
+			{
+				navView.UpdateItemsStates();
+			}
+		}
 	}
 }

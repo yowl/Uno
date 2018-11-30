@@ -8,6 +8,9 @@ namespace Windows.UI.Xaml.Controls
 {
 	public partial class NavigationViewItem : NavigationViewItemBase
 	{
+		private Control _presenter;
+		private FrameworkElement _indicator;
+
 		public IconElement Icon
 		{
 			get => (IconElement)GetValue(IconProperty);
@@ -37,7 +40,18 @@ namespace Windows.UI.Xaml.Controls
 			DefaultStyleKey = typeof(NavigationViewItem);
 		}
 
-		internal Rectangle SelectionIndicator { get; private set; }
+		internal FrameworkElement SelectionIndicator
+		{
+			get
+			{
+				if (_indicator == null)
+				{
+					_indicator = this.FindName("SelectionIndicator") as Rectangle;
+				}
+
+				return _indicator;
+			}
+		}
 
 		protected override void OnPointerPressed(PointerRoutedEventArgs args)
 		{
@@ -52,7 +66,18 @@ namespace Windows.UI.Xaml.Controls
 		{
 			base.OnApplyTemplate();
 
-			SelectionIndicator = GetTemplateChild("SelectionIndicator") as Rectangle;
+			_presenter = this.FindName("NavigationViewItemPresenter") as Control;
+			_indicator = null;
+		}
+
+		protected internal override void SetVisualState(string state, bool useTransitions)
+		{
+			base.SetVisualState(state, useTransitions);
+
+			if (_presenter != null)
+			{
+				VisualStateManager.GoToState(_presenter, state, true);
+			}
 		}
 	}
 }
