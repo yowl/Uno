@@ -11,6 +11,9 @@ using System.Linq;
 using Uno.Disposables;
 using System.Text;
 using System.Threading.Tasks;
+using Windows.Foundation;
+using Rectangle = Windows.UI.Xaml.Shapes.Rectangle;
+using Size = Windows.Foundation.Size;
 using View = Windows.UI.Xaml.FrameworkElement;
 
 
@@ -209,6 +212,60 @@ namespace Uno.UI.Tests.GridTests
 			Assert.AreEqual(new Windows.Foundation.Rect(12, 5, 8, 15), c4.Arranged);
 
 			Assert.AreEqual(4, SUT.GetChildren().Count());
+		}
+
+		private class MockedFrameworkElement : FrameworkElement
+		{
+			private readonly Func<Size, Size> _measure;
+			private readonly Func<Size, Size> _arrange;
+
+			public MockedFrameworkElement(Func<Size, Size> measure, Func<Size, Size> arrange)
+			{
+				_measure = measure;
+				_arrange = arrange;
+			}
+
+			protected override Size MeasureOverride(Size availableSize) => _measure(availableSize);
+
+			protected override Size ArrangeOverride(Size finalSize) => _arrange(finalSize);
+		}
+
+		[Ignore]
+		[TestMethod]
+		public void When_NotUsingFastPath()
+		{
+			var SUT = new Grid() { Name = "test" };
+
+			SUT.RowDefinitions.Add(new RowDefinition { Height = "72" });
+			SUT.RowDefinitions.Add(new RowDefinition { Height = "*" });
+
+			SUT.ColumnDefinitions.Add(new ColumnDefinition { Width = "*" });
+			SUT.ColumnDefinitions.Add(new ColumnDefinition { Width = "1024" });
+
+			var measureCalls = 0;
+
+			Size Measure(Size availableSize)
+			{
+				Assert.AreEqual(1, ++measureCalls);
+				Assert.AreEqual(new Windows.Foundation.Size(1024, 409), availableSize);
+
+				return availableSize;
+			}
+
+			Size Arrange(Size finalSize)
+			{
+				return Size.Empty;
+			}
+
+			var elem = new MockedFrameworkElement(Measure, Arrange)
+			{
+				MinHeight = 400,
+				MinWidth = 400
+			};
+
+			SUT.AddChild(elem.GridPosition(1, 0).GridColumnSpan(3));
+
+			SUT.Measure(new Size(2048, 481));
 		}
 
 		[TestMethod]

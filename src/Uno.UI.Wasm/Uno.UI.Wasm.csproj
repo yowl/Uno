@@ -22,10 +22,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <UpToDateCheckInput Remove="ts\AppManifest.ts" />
-	  <UpToDateCheckInput Remove="ts\Interop\IAppManifest.ts" />
-	  <UpToDateCheckInput Remove="ts\Interop\IUnoDispatch.ts" />
-	  <UpToDateCheckInput Remove="ts\MonoSupport.ts" />
+	  <EmbeddedResource Update="WasmScripts\Uno.UI.js" />
 	</ItemGroup>
 
 	<ItemGroup>
