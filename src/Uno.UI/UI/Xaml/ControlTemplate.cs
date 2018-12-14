@@ -20,6 +20,10 @@ namespace Windows.UI.Xaml.Controls
 {
 	public partial class ControlTemplate : FrameworkTemplate
 	{
+		public ControlTemplate() : base()
+		{
+		}
+
 		public ControlTemplate (Func<View> factory)
 			: base (factory)
 		{
