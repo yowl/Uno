@@ -342,9 +342,17 @@ namespace Windows.UI.Xaml.Controls
 			var container = sender as FrameworkElement;
 			var point = e.GetCurrentPoint(container).Position;
 
-			var newOffset = Orientation == Orientation.Horizontal ?
-				point.X / container.ActualWidth :
-				point.Y / container.ActualHeight;
+			var newOffset = Orientation == Orientation.Horizontal
+				? point.X / container.ActualWidth
+				: point.Y / container.ActualHeight;
+
+#if __WASM__
+			// The slider fills from bottom on wasm, as compared to other platforms.
+			if (Orientation == Orientation.Vertical)
+			{
+				newOffset = 1 - newOffset;
+			}
+#endif
 
 			ApplySlideToValue(newOffset);
 

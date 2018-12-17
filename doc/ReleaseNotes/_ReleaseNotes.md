@@ -30,7 +30,7 @@
 * Fixed fallback support for Style property set via ThemeResource
 * Add support for multiple resw folders with upri resource generation 
 * Add support for `ThicknessHelper`
-* ResourceLoader adjustments … 
+* ResourceLoader adjustments â€¦ 
   * CurrentUICulture and CurrentCulture are set when setting ResourceLoader .DefaultCulture
   * upri load now ignores resources not used by the current culture
 * Add BrushConverter support for Color input 
@@ -62,7 +62,8 @@
  * 140721 [Android] FlipView not visible when navigating back to page
  * 138537 [iOS] App freezes after State selection causing infinite load on every subsequent launch
  * Fix invalid Border Content type for macOS
- * Don't fail iOS ListView if item Content is null 
+ * Don't fail iOS ListView if item Content is null
+ * 142569 [Wasm] Fixed vertical slider doesn't handler click properly
 
 ## Release 1.42
 
