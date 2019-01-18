@@ -17,6 +17,7 @@ namespace Windows.UI.Xaml.Controls
 		private FrameworkElement _switchKnob;
 		private FrameworkElement _switchKnobBounds;
 		private TranslateTransform _knobTranslateTransform;
+		private bool _isOnBinding = false;
 
 		// If the user only drags the thumb by a few pixels before releasing it, 
 		// we interpret it as a Tap rather than a drag gesture.
@@ -181,6 +182,8 @@ namespace Windows.UI.Xaml.Controls
 
 		private void OnIsOnChanged(DependencyPropertyChangedEventArgs e)
 		{
+			_isOnBinding = (bool)e.NewValue;
+
 			// On windows the event is raised first, then the ui is updated
 			Toggled?.Invoke(this, new RoutedEventArgs());
 			UpdateSwitchKnobPosition(0);
@@ -300,7 +303,7 @@ namespace Windows.UI.Xaml.Controls
 
 		public void OnTemplateRecycled()
 		{
-			IsOn = false;
+			IsOn = _isOnBinding; 
 		}
 
 		protected override AutomationPeer OnCreateAutomationPeer()
