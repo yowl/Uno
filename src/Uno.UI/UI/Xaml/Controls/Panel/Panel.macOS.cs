@@ -150,11 +150,7 @@ namespace Windows.UI.Xaml.Controls
 			Children.Add(view);
 		}
 
-		public bool HitTestOutsideFrame
-		{
-			get;
-			set;
-		}
+		public bool HitTestOutsideFrame { get; set; }
 
 		public override NSView HitTest(CGPoint point)
 		{

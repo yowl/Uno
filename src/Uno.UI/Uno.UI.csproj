@@ -329,6 +329,8 @@
 	<ItemGroup>
 	  <UpToDateCheckInput Remove="DataBinding\BindingPropertyHelper.MemberBinder.cs" />
 	  <UpToDateCheckInput Remove="FeatureConfiguration.cs" />
+	  <UpToDateCheckInput Remove="UI\Xaml\Controls\Border\BorderLayerRenderer.cs" />
+	  <UpToDateCheckInput Remove="UI\Xaml\Media\AcrylicBrush .cs" />
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(TargetFramework)'=='netstandard2.0'">
