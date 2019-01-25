@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
+using CoreAnimation;
 using CoreGraphics;
 
 namespace Uno.UI.Media
@@ -22,13 +23,13 @@ namespace Uno.UI.Media
 		{
 			// On iOS Transform are applied by default on the center on the view
 
-			Owner.Layer.AnchorPoint = CGPoint.Empty;
-			Owner.Transform = ToNative(matrix);
+			Owner.Layer.AnchorPoint = CurrentOrigin;
+			Owner.Layer.Transform = CATransform3D.MakeFromAffine(ToNative(matrix));
 		}
 
 		partial void Cleanup()
 		{
-			Owner.Transform = CGAffineTransform.MakeIdentity();
+			Owner.Layer.Transform = CATransform3D.Identity;
 		}
 	}
 }

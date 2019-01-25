@@ -44,6 +44,9 @@ namespace Uno.UI.Media
 
 		partial void Apply(Matrix3x2 matrix, bool isSizeChanged)
 		{
+			Owner.PivotX = (float)(CurrentSize.Width * CurrentOrigin.X);
+			Owner.PivotY = (float)(CurrentSize.Height * CurrentOrigin.Y);
+			//Owner.Layer.AnchorPoint = new CGPoint(CurrentOrigin.X, CurrentOrigin.Y);
 			Matrix.Set(matrix);
 
 			if (!isSizeChanged)

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Windows.Foundation;
 using Uno.UI;
 
 namespace Windows.UI.Xaml.Media.Animation
@@ -23,11 +24,11 @@ namespace Windows.UI.Xaml.Media.Animation
 			}
 			else
 			{
-				return new NativeValueAnimatorAdapter(timeline.GetGPUAnimator(startingValue, targetValue));
+				return timeline.GetGPUAnimator(startingValue, targetValue);
 			}
 		}
 
-		private static ValueAnimator GetGPUAnimator(this Timeline timeline, double startingValue, double targetValue)
+		private static NativeValueAnimatorAdapter GetGPUAnimator(this Timeline timeline, double startingValue, double targetValue)
 		{
 			// Overview    : http://developer.android.com/guide/topics/graphics/prop-animation.html#property-vs-view
 			// Performance : http://developer.android.com/guide/topics/graphics/hardware-accel.html#layers-anims
@@ -42,7 +43,7 @@ namespace Windows.UI.Xaml.Media.Animation
 				switch (property)
 				{
 					case nameof(FrameworkElement.Opacity):
-						return GetRelativeAnimator(view, "alpha", startingValue, targetValue);
+						return new NativeValueAnimatorAdapter(GetRelativeAnimator(view, "alpha", startingValue, targetValue));
 				}
 			}
 
@@ -51,31 +52,102 @@ namespace Windows.UI.Xaml.Media.Animation
 				switch (property)
 				{
 					case nameof(TranslateTransform.X):
-						return GetPixelsAnimator(translate.View, "translationX", startingValue, targetValue);
+						return new NativeValueAnimatorAdapter(GetPixelsAnimator(translate.View, "translationX", startingValue, targetValue));
 
 					case nameof(TranslateTransform.Y):
-						return GetPixelsAnimator(translate.View, "translationY", startingValue, targetValue);
+						return new NativeValueAnimatorAdapter(GetPixelsAnimator(translate.View, "translationY", startingValue, targetValue));
 				}
 			}
 
 			if (target is RotateTransform rotate)
 			{
+				float pivotX = 0, pivotY = 0;
+
 				switch (property)
 				{
 					case nameof(RotateTransform.Angle):
-						return GetRelativeAnimator(rotate.View, "rotation", startingValue, targetValue);
+						return new NativeValueAnimatorAdapter(GetRelativeAnimator(rotate.View, "rotation", startingValue, targetValue), Prepare, CommitAngle);
+				}
+
+				void Prepare()
+				{
+					pivotX = rotate.View.PivotX;
+					pivotY = rotate.View.PivotY;
+
+					// Suspend the matrix transform
+					rotate.IsAnimating = true;
+
+					// Apply RotateTransform using native values
+					rotate.View.PivotX += (float)rotate.CenterX;
+					rotate.View.PivotY += (float)rotate.CenterY;
+					rotate.View.Rotation = (float)rotate.Angle;
+				}
+
+				void CommitAngle(float finalValue)
+				{
+					// Remove the native values
+					rotate.View.PivotX = pivotX;
+					rotate.View.PivotY = pivotY;
+					rotate.View.Rotation = 0;
+
+					// Restore the transform matrix and update it
+					rotate.IsAnimating = false;
+					rotate.Angle = finalValue;
 				}
 			}
 
 			if (target is ScaleTransform scale)
 			{
+				float pivotX = 0, pivotY = 0;
+
 				switch (property)
 				{
 					case nameof(ScaleTransform.ScaleX):
-						return GetRelativeAnimator(scale.View, "scaleX", startingValue, targetValue);
+						return new NativeValueAnimatorAdapter(GetRelativeAnimator(scale.View, "scaleX", startingValue, targetValue), Prepare, CommitScaleX);
 
 					case nameof(ScaleTransform.ScaleY):
-						return GetRelativeAnimator(scale.View, "scaleY", startingValue, targetValue);
+						return new NativeValueAnimatorAdapter(GetRelativeAnimator(scale.View, "scaleY", startingValue, targetValue), Prepare, CommitScaleY);
+				}
+
+				void Prepare()
+				{
+					pivotX = scale.View.PivotX;
+					pivotY = scale.View.PivotY;
+
+					// Suspend the matrix transform
+					scale.IsAnimating = true;
+
+					// Apply RotateTransform using native values
+					scale.View.PivotX += (float)scale.CenterX;
+					scale.View.PivotY += (float)scale.CenterY;
+					scale.View.ScaleX = (float)scale.ScaleX;
+					scale.View.ScaleY = (float)scale.ScaleY;
+				}
+
+				void CommitScaleX(float finalValue)
+				{
+					// Remove the native values
+					scale.View.PivotX = pivotX;
+					scale.View.PivotY = pivotY;
+					scale.View.ScaleX = 0;
+					scale.View.ScaleY = 0;
+
+					// Restore the transform matrix and update it
+					scale.IsAnimating = false;
+					scale.ScaleX = finalValue;
+				}
+
+				void CommitScaleY(float finalValue)
+				{
+					// Remove the native values
+					scale.View.PivotX = pivotX;
+					scale.View.PivotY = pivotY;
+					scale.View.ScaleX = 0;
+					scale.View.ScaleY = 0;
+
+					// Restore the transform matrix and update it
+					scale.IsAnimating = false;
+					scale.ScaleY = finalValue;
 				}
 			}
 
@@ -96,19 +168,19 @@ namespace Windows.UI.Xaml.Media.Animation
 				switch (property)
 				{
 					case nameof(CompositeTransform.TranslateX):
-						return GetPixelsAnimator(composite.View, "translationX", startingValue, targetValue);
+						return new NativeValueAnimatorAdapter(GetPixelsAnimator(composite.View, "translationX", startingValue, targetValue));
 
 					case nameof(CompositeTransform.TranslateY):
-						return GetPixelsAnimator(composite.View, "translationY", startingValue, targetValue);
+						return new NativeValueAnimatorAdapter(GetPixelsAnimator(composite.View, "translationY", startingValue, targetValue));
 
 					case nameof(CompositeTransform.Rotation):
-						return GetRelativeAnimator(composite.View, "rotation", startingValue, targetValue);
+						return new NativeValueAnimatorAdapter(GetRelativeAnimator(composite.View, "rotation", startingValue, targetValue));
 
 					case nameof(CompositeTransform.ScaleX):
-						return GetRelativeAnimator(composite.View, "scaleX", startingValue, targetValue);
+						return new NativeValueAnimatorAdapter(GetRelativeAnimator(composite.View, "scaleX", startingValue, targetValue));
 
 					case nameof(CompositeTransform.ScaleY):
-						return GetRelativeAnimator(composite.View, "scaleY", startingValue, targetValue);
+						return new NativeValueAnimatorAdapter(GetRelativeAnimator(composite.View, "scaleY", startingValue, targetValue));
 
 					//case nameof(CompositeTransform.SkewX):
 					//	return ObjectAnimator.OfFloat(composite.View, "scaleX", ViewHelper.LogicalToPhysicalPixels(targetValue), startingValue);

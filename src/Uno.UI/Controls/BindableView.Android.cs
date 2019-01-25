@@ -233,6 +233,7 @@ namespace Uno.UI.Controls
 		protected override bool GetChildStaticTransformation(View child, Transformation outTransform)
 		{
 			if (_childrenTransformations.TryGetValue(child, out var transform)
+				&& !transform.Transform.IsAnimating
 				&& !transform.Matrix.IsIdentity)
 			{
 				outTransform.Set(transform.Matrix);

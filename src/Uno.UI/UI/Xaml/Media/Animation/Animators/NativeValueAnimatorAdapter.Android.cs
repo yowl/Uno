@@ -16,10 +16,19 @@ namespace Windows.UI.Xaml.Media.Animation
 		private readonly Dictionary<EventHandler, EventHandler> _cancelHandlers = new Dictionary<EventHandler, EventHandler>();
 
 		private readonly ValueAnimator _adaptee;
+		private readonly Action _prepareAnimation;
+		private readonly Action<float> _commitAnimation;
 
 		public NativeValueAnimatorAdapter(ValueAnimator adaptee)
+			: this(adaptee, null, null)
+		{
+		}
+
+		public NativeValueAnimatorAdapter(ValueAnimator adaptee, Action prepareAnimation, Action<float> commitAnimation)
 		{
 			_adaptee = adaptee;
+			_prepareAnimation = prepareAnimation;
+			_commitAnimation = commitAnimation;
 		}
 
 		/// <inheritdoc />
@@ -177,7 +186,22 @@ namespace Windows.UI.Xaml.Media.Animation
 		public long Duration => _adaptee.Duration;
 
 		/// <inheritdoc />
-		public void Start() => _adaptee.Start();
+		public void Start()
+		{
+			if (_prepareAnimation != null && _prepareAnimation != null)
+			{
+				_prepareAnimation?.Invoke();
+				_adaptee.AnimationEnd += End;
+			}
+
+			_adaptee.Start();
+
+			void End(object sender, EventArgs eventArgs)
+			{
+				_adaptee.AnimationEnd -= End;
+				_commitAnimation((float)AnimatedValue);
+			}
+		}
 
 		/// <inheritdoc />
 		public void Pause()
