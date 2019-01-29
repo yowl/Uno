@@ -1,15 +1,6 @@
 using System;
 using System.Numerics;
 using Windows.Foundation;
-#if XAMARIN_ANDROID
-using _View = Android.Views.View;
-#elif XAMARIN_IOS_UNIFIED
-using _View = UIKit.UIView;
-#elif __WASM__
-using _View = Windows.UI.Xaml.UIElement;
-#else
-using _View = System.Object;
-#endif
 
 namespace Windows.UI.Xaml.Media
 {

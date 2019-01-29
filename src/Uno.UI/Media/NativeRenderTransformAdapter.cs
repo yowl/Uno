@@ -88,8 +88,8 @@ namespace Uno.UI.Media
 		{
 			var matrix = CurrentSize.IsEmpty || CurrentSize.Width == 0 || CurrentSize.Width == 0
 				? Matrix3x2.Identity
-				//: Transform.ToMatrix(CurrentOrigin, CurrentSize);
-				: Transform.ToMatrix(new Point(0, 0));
+				: Transform.ToMatrix(CurrentOrigin, CurrentSize);
+				//: Transform.ToMatrix(new Point(0, 0));
 
 			Apply(matrix, isSizeChanged);
 		}

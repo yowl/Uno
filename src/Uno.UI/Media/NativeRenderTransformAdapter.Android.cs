@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Media;
+using Windows.UI.Xaml.Media.Animation;
 using Android.Views;
 using Android.Views.Animations;
 using Microsoft.Extensions.Logging;
@@ -15,13 +17,20 @@ namespace Uno.UI.Media
 {
 	partial class NativeRenderTransformAdapter
 	{
-		partial void Initialized()
-			=> UpdateParent(null, Owner.Parent);
+		private static readonly float[] _identity =
+		{
+			1, 0, 0,
+			0, 1, 0,
+			0, 0, 1
+		};
 
 		/// <summary>
 		/// Gets the native transform that can be applied by the parent ViewGroup for the given child view
 		/// </summary>
-		internal MatrixTransformation Matrix { get; } = new MatrixTransformation();
+		internal Android.Graphics.Matrix Matrix { get; } = new Android.Graphics.Matrix();
+
+		partial void Initialized()
+			=> UpdateParent(null, Owner.Parent);
 
 		public void UpdateParent(object oldParent, object newParent)
 		{
@@ -44,14 +53,33 @@ namespace Uno.UI.Media
 
 		partial void Apply(Matrix3x2 matrix, bool isSizeChanged)
 		{
-			Owner.PivotX = (float)(CurrentSize.Width * CurrentOrigin.X);
-			Owner.PivotY = (float)(CurrentSize.Height * CurrentOrigin.Y);
-			//Owner.Layer.AnchorPoint = new CGPoint(CurrentOrigin.X, CurrentOrigin.Y);
-			Matrix.Set(matrix);
-
-			if (!isSizeChanged)
+			if (Transform.IsAnimating)
 			{
-				Owner.Invalidate();
+				Matrix.SetValues(_identity);
+				if (isSizeChanged)
+				{
+					// We must update the PivotX and PivotY
+					AnimatorFactory.UpdatePivotWhileAnimating(
+						Transform,
+						CurrentSize.Width * CurrentOrigin.X,
+						CurrentSize.Height * CurrentOrigin.Y);
+				}
+			}
+			else
+			{
+				Matrix.SetValues(new[]
+				{
+					matrix.M11, matrix.M21, ViewHelper.LogicalToPhysicalPixels(matrix.M31),
+					matrix.M12, matrix.M22, ViewHelper.LogicalToPhysicalPixels(matrix.M32),
+					0, 0, 1
+				});
+				Owner.PivotX = 0;
+				Owner.PivotY = 0;
+
+				if (!isSizeChanged)
+				{
+					Owner.Invalidate();
+				}
 			}
 		}
 
@@ -62,33 +90,35 @@ namespace Uno.UI.Media
 			Owner.Invalidate();
 		} 
 
-		internal class MatrixTransformation : Transformation
-		{
-			public MatrixTransformation()
-				: this(Matrix3x2.Identity)
-			{
-			}
+		//internal class MatrixTransformation : Transformation
+		//{
+		//	public static MatrixTransformation Identity { get; } = new MatrixTransformation();
 
-			public MatrixTransformation(Matrix3x2 matrix)
-			{
-				Alpha = 1;
-				TransformationType = TransformationTypes.Matrix;
+		//	public MatrixTransformation()
+		//		: this(Matrix3x2.Identity)
+		//	{
+		//	}
 
-				Set(matrix);
-			}
+		//	public MatrixTransformation(Matrix3x2 matrix)
+		//	{
+		//		Alpha = 1;
+		//		TransformationType = TransformationTypes.Matrix;
 
-			public bool IsIdentity { get; private set; }
+		//		Set(matrix);
+		//	}
 
-			public void Set(Matrix3x2 matrix)
-			{
-				Matrix.SetValues(new[]
-				{
-					matrix.M11, matrix.M21, ViewHelper.LogicalToPhysicalPixels(matrix.M31),
-					matrix.M12, matrix.M22, ViewHelper.LogicalToPhysicalPixels(matrix.M32),
-					0, 0, 1
-				});
-				IsIdentity = matrix.IsIdentity;
-			}
-		}
+		//	public bool IsIdentity { get; private set; }
+
+		//	public void Set(Matrix3x2 matrix)
+		//	{
+		//		Matrix.SetValues(new[]
+		//		{
+		//			matrix.M11, matrix.M21, ViewHelper.LogicalToPhysicalPixels(matrix.M31),
+		//			matrix.M12, matrix.M22, ViewHelper.LogicalToPhysicalPixels(matrix.M32),
+		//			0, 0, 1
+		//		});
+		//		IsIdentity = matrix.IsIdentity;
+		//	}
+		//}
 	}
 }

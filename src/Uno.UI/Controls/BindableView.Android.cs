@@ -206,44 +206,17 @@ namespace Uno.UI.Controls
 			}
 		}
 
-
-		private readonly Dictionary<View, NativeRenderTransformAdapter> _childrenTransformations = new Dictionary<View, NativeRenderTransformAdapter>();
-
+		/// <summary>
+		/// Registers the native adapter which handles the RenderTransform on a child view
+		/// </summary>
 		internal void RegisterChildTransform(NativeRenderTransformAdapter transformation)
-		{
-			_childrenTransformations[transformation.Owner] = transformation;
+			=> SetChildRenderTransform(transformation.Owner, transformation.Matrix);
 
-			if (_childrenTransformations.Count == 1) // No matter if we only changed the transform of the same view
-			{
-				SetStaticTransformationsEnabled(true);
-			}
-		}
-
+		/// <summary>
+		/// Removes the native adapter which handles the RenderTransform on a child view
+		/// </summary>
 		internal void UnregisterChildTransform(NativeRenderTransformAdapter transformation)
-		{
-			_childrenTransformations.Remove(transformation.Owner);
-
-			if (_childrenTransformations.Count == 0)
-			{
-				SetStaticTransformationsEnabled(false);
-			}
-		}
-
-		/// <inheritdoc />
-		protected override bool GetChildStaticTransformation(View child, Transformation outTransform)
-		{
-			if (_childrenTransformations.TryGetValue(child, out var transform)
-				&& !transform.Transform.IsAnimating
-				&& !transform.Matrix.IsIdentity)
-			{
-				outTransform.Set(transform.Matrix);
-				return true;
-			}
-			else
-			{
-				return false;
-			}
-		}
+			=> RemoveChildRenderTransform(transformation.Owner);
 
 		/// <summary>
 		/// Should not be used directly. Notifies that a view has been added to the ViewGroup using the native AddView methods.

@@ -199,7 +199,7 @@ namespace Windows.UI.Xaml.Media.Animation
 			void End(object sender, EventArgs eventArgs)
 			{
 				_adaptee.AnimationEnd -= End;
-				_commitAnimation((float)AnimatedValue);
+				_commitAnimation((float)(Java.Lang.Float)_adaptee.AnimatedValue);
 			}
 		}
 

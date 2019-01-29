@@ -9,17 +9,17 @@ namespace Windows.UI.Xaml.Media
 	{
 		internal Matrix3x2 Inner;
 
+		internal Matrix(Matrix3x2 matrix)
+		{
+			Inner = matrix;
+		}
+
 		public Matrix(double m11, double m12, double m21, double m22, double offsetX, double offsetY)
 		{
 			Inner = new Matrix3x2((float)m11, (float)m12, (float)m21, (float)m22, (float)offsetX, (float)offsetY);
 		}
 
-		public static Matrix Identity { get; } =
-			new Matrix(
-				1, 0,
-				0, 1,
-				0, 0
-			);
+		public static Matrix Identity { get; } = new Matrix(Matrix3x2.Identity);
 
 		public bool IsIdentity => this.Equals(Identity);
 
