@@ -30,6 +30,8 @@ namespace Windows.UI.Composition
 		private Func<float, NSValue> _nsValueConversion;
 		private Action _onFinish;		
 		private bool _isDiscrete; // No interpolation
+		private readonly Action<CALayer> _onStarting;
+		private readonly Action<CALayer, float> _onEnding;
 
 		CAAnimation _animation = null;
 		EventHandler _onAnimationStarted = null;
@@ -45,7 +47,9 @@ namespace Windows.UI.Composition
 			CAMediaTimingFunction timingFunction,
 			Func<float, NSValue> nsValueConversion,
 			Action onFinish,
-			bool isDiscrete
+			bool isDiscrete,
+			Action<CALayer> onStarting = null,
+			Action<CALayer, float> onEnding = null
 		)
 		{
 			_layer = new WeakReference<CALayer>(layer);
@@ -59,7 +63,9 @@ namespace Windows.UI.Composition
 			_nsValueConversion = nsValueConversion;
 			_onFinish = onFinish;
 			_isDiscrete = isDiscrete;
-        }
+			_onStarting = onStarting;
+			_onEnding = onEnding;
+		}
 
 		public void Start()
 		{
@@ -124,8 +130,8 @@ namespace Windows.UI.Composition
 				animation.KeyTimes = new NSNumber[] { new NSNumber(0.0), new NSNumber(1.0) };
 				animation.Values = new NSObject[] { _nsValueConversion(to) };
 				animation.CalculationMode = CAKeyFrameAnimation.AnimationDescrete;
-                _animation = animation;
-            }
+				_animation = animation;
+			}
 			else
 			{
 				var animation = CABasicAnimation.FromKeyPath(_property);
@@ -174,6 +180,7 @@ namespace Windows.UI.Composition
 				CATransaction.Begin();
 				CATransaction.DisableActions = true;
 				layer.SetValueForKeyPath(_nsValueConversion(to), new NSString(_property));
+				_onEnding?.Invoke(layer, to);
 				CATransaction.Commit();
 
 				anim.AnimationStopped -= _onAnimationStopped;
@@ -203,8 +210,9 @@ namespace Windows.UI.Composition
 
 			_animation.AnimationStarted += _onAnimationStarted;
 
+			_onStarting?.Invoke(layer);
 			layer.AddAnimation(_animation, _key);
-        }
+		}
 
 		private void StopAnimation(CALayer layer)
 		{

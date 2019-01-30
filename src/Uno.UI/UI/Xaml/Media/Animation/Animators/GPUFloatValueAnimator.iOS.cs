@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
+using Windows.Foundation;
 using Uno.UI.DataBinding;
 using UIKit;
 using CoreGraphics;
@@ -11,6 +13,7 @@ using Uno.Extensions;
 using Uno.Logging;
 using Windows.UI.Composition;
 using Uno.UI;
+using Uno.UI.Extensions;
 
 namespace Windows.UI.Xaml.Media.Animation
 {
@@ -276,11 +279,27 @@ namespace Windows.UI.Xaml.Media.Animation
 				|| animatedItem.PropertyName.Equals(RotateTransformAngle)
 				|| animatedItem.PropertyName.Equals(RotateTransformAngleWithNamespace))
 			{
-				return CreateCoreAnimation(view, "transform.rotation", value => new NSNumber(Transform.ToRadians(value)));
+				return CreateCoreAnimation(view, "transform.rotation", value => new NSNumber(MathEx.ToRadians(value)), GetCenter, Commit);
 			}
 			else
 			{
 				throw new NotSupportedException(__notSupportedProperty);
+			}
+
+			Point GetCenter(Point relativeOrigin)
+			{
+				Rect frame = view.Layer.Frame;
+				var centerX = transform.CenterX / frame.Width + relativeOrigin.X;
+				var centerY = transform.CenterY / frame.Height + relativeOrigin.Y;
+
+				return new Point(centerX, centerY);
+			}
+
+			Matrix3x2 Commit(float finalValue)
+			{
+				transform.Angle = finalValue;
+
+				return transform.MatrixCore;
 			}
 		}
 
@@ -293,17 +312,41 @@ namespace Windows.UI.Xaml.Media.Animation
 				|| animatedItem.PropertyName.Equals(ScaleTransformX)
 				|| animatedItem.PropertyName.Equals(ScaleTransformXWithNamespace))
 			{
-				return CreateCoreAnimation(view, "transform.scale.x", value => new NSNumber(value));
+				return CreateCoreAnimation(view, "transform.scale.x", value => new NSNumber(value), GetCenter, CommitScaleX);
+
+				Matrix3x2 CommitScaleX(float finalValue)
+				{
+					transform.ScaleX = finalValue;
+
+					return transform.MatrixCore;
+				}
 			}
 			else if (animatedItem.PropertyName.Equals("ScaleY")
 				|| animatedItem.PropertyName.Equals(ScaleTransformY)
 				|| animatedItem.PropertyName.Equals(ScaleTransformYWithNamespace))
 			{
-				return CreateCoreAnimation(view, "transform.scale.y", value => new NSNumber(value));
+				return CreateCoreAnimation(view, "transform.scale.y", value => new NSNumber(value), GetCenter, CommitScaleY);
+
+				Matrix3x2 CommitScaleY(float finalValue)
+				{
+					transform.ScaleY = finalValue;
+
+					return transform.MatrixCore;
+				}
 			}
 			else
 			{
 				throw new NotSupportedException(__notSupportedProperty);
+			}
+
+			Point GetCenter(Point relativeOrigin)
+			{
+				Rect frame = view.Layer.Frame;
+				var centerX = transform.CenterX / frame.Width + relativeOrigin.X;
+				var centerY = transform.CenterY / frame.Height + relativeOrigin.Y;
+
+
+				return new Point(centerX, centerY);
 			}
 		}
 
@@ -357,7 +400,7 @@ namespace Windows.UI.Xaml.Media.Animation
 				case CompositeTransformRotation:
 				case CompositeTransformRotationWithNamespace:
 				case "Rotation":
-					return CreateCoreAnimation(view, "transform.rotation", value => new NSNumber(Transform.ToRadians(value)));
+					return CreateCoreAnimation(view, "transform.rotation", value => new NSNumber(MathEx.ToRadians(value)));
 				case CompositeTransformScaleX:
 				case CompositeTransformScaleXWithNamespace:
 				case "ScaleX":
@@ -381,7 +424,12 @@ namespace Windows.UI.Xaml.Media.Animation
 			}
 		}
 		#endregion
-		private UnoCoreAnimation CreateCoreAnimation(UIView view, string property, Func<float, NSValue> nsValueConversion)
+		private UnoCoreAnimation CreateCoreAnimation(
+			UIView view,
+			string property,
+			Func<float, NSValue> nsValueConversion,
+			Func<Point, Point> getAnimationCenter = null,
+			Func<float, Matrix3x2> commitAnimationValue = null)
 		{
 			var timingFunction = _easingFunction == null ?
 				CAMediaTimingFunction.FromName(CAMediaTimingFunction.Linear) :
@@ -389,7 +437,30 @@ namespace Windows.UI.Xaml.Media.Animation
 
 			var isDiscrete = _easingFunction is DiscreteDoubleKeyFrame.DiscreteDoubleKeyFrameEasingFunction;
 
-			return new UnoCoreAnimation(view.Layer, property, _from, _to, StartDelay, _duration, timingFunction, nsValueConversion, FinalizeAnimation, isDiscrete);
+			var originalAnchor = CGPoint.Empty;
+			void ApplyTempCenter(CALayer layer)
+			{
+				// This is temporary hack to restore the animations with the matrix based transform
+				// Basically we suspend the full transform while we animate only the given property,
+				// so it does works with CompositeTransform nor GroupTransform, but as they didn't
+				// work at all previously, it an acceptable compromise.
+
+				originalAnchor = layer.AnchorPoint;
+
+				layer.Transform = CATransform3D.Identity;
+				layer.AnchorPoint = getAnimationCenter(originalAnchor);
+			}
+
+			void RemoveTempCenter(CALayer layer, float finalValue)
+			{
+				layer.Transform = commitAnimationValue(finalValue).ToTransform3D();
+				layer.AnchorPoint = originalAnchor;
+			}
+
+			return getAnimationCenter == null || commitAnimationValue == null
+				? new UnoCoreAnimation(view.Layer, property, _from, _to, StartDelay, _duration, timingFunction, nsValueConversion, FinalizeAnimation, isDiscrete)
+				: new UnoCoreAnimation(view.Layer, property, _from, _to, StartDelay, _duration, timingFunction, nsValueConversion, FinalizeAnimation, isDiscrete, ApplyTempCenter, RemoveTempCenter);
+
 		}
 
 		private NSValue ToCASkewTransform(float angleX, float angleY)
