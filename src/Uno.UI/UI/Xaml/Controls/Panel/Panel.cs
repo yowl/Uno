@@ -133,7 +133,7 @@ namespace Windows.UI.Xaml.Controls
 				typeof(Panel),
 				new FrameworkPropertyMetadata(
 					Thickness.Empty,
-					FrameworkPropertyMetadataOptions.None,
+					FrameworkPropertyMetadataOptions.AffectsMeasure,
 					(s, e) => ((Panel)s)?.OnPaddingChanged((Thickness)e.OldValue, (Thickness)e.NewValue)
 				)
 			);
@@ -155,7 +155,7 @@ namespace Windows.UI.Xaml.Controls
 				typeof(Panel),
 				new FrameworkPropertyMetadata(
 					Thickness.Empty,
-					FrameworkPropertyMetadataOptions.None,
+					FrameworkPropertyMetadataOptions.AffectsMeasure,
 					(s, e) => ((Panel)s)?.OnBorderThicknessChanged((Thickness)e.OldValue, (Thickness)e.NewValue)
 				)
 			);

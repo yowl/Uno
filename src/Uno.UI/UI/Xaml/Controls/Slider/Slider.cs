@@ -73,11 +73,57 @@ namespace Windows.UI.Xaml.Controls
 
 			if (HasXamlTemplate)
 			{
-				SizeChanged += (s, e) => ApplyValueToSlide(Value);
+				SizeChanged += (s, e) =>
+				{
+					if (Orientation == Orientation.Horizontal)
+					{
+						if (Math.Abs(DesiredSize.Width - e.NewSize.Width) > double.Epsilon)
+						{
+							ApplyValueToSlide(Value, e.NewSize.Width, e.NewSize.Height);
+						}
+					}
+					else
+					{
+						if (Math.Abs(DesiredSize.Height - e.NewSize.Height) > double.Epsilon)
+						{
+							ApplyValueToSlide(Value, e.NewSize.Width, e.NewSize.Height);
+						}
+					}
+				};
 				ApplyValueToSlide(Value);
 			}
 
 			UpdateCommonState(useTransitions: false);
+		}
+
+		/// <inheritdoc />
+		protected override Size MeasureOverride(Size availableSize)
+		{
+			var actualWidth = ActualWidth;
+			var actualHeight = ActualHeight;
+			var updated = base.MeasureOverride(availableSize);
+
+			if (!HasXamlTemplate)
+			{
+				return updated;
+			}
+
+			if (Orientation == Orientation.Horizontal)
+			{
+				if (Math.Abs(actualWidth - updated.Width) > double.Epsilon)
+				{
+					ApplyValueToSlide(Value, updated.Width, updated.Height);
+				}
+			}
+			else
+			{
+				if (Math.Abs(actualHeight - updated.Height) > double.Epsilon)
+				{
+					ApplyValueToSlide(Value, updated.Width, updated.Height);
+				}
+			}
+
+			return updated;
 		}
 
 		protected override void OnLoaded()
@@ -280,14 +326,15 @@ namespace Windows.UI.Xaml.Controls
 		/// Take the given value and move the slider accordingly.
 		/// </summary>
 		/// <param name="value">New value of the property Value</param>
-		private void ApplyValueToSlide(double value)
+		private void ApplyValueToSlide(double value) => ApplyValueToSlide(value, ActualWidth, ActualHeight);
+		private void ApplyValueToSlide(double value, double width, double height)
 		{
 			// The _decreaseRect's height/width is updated, which in turn pushes or pulls the Thumb to its correct position
 			if (Orientation == Orientation.Horizontal)
 			{
                 if (_horizontalThumb != null && _horizontalDecreaseRect != null)
                 {
-                    var maxWidth = ActualWidth - _horizontalThumb.ActualWidth;
+                    var maxWidth = width - _horizontalThumb.ActualWidth;
                     _horizontalDecreaseRect.Width = (float)((Value - Minimum) / (Maximum - Minimum)) * maxWidth;
                 }
 			}
@@ -295,7 +342,7 @@ namespace Windows.UI.Xaml.Controls
 			{
                 if (_verticalThumb != null && _verticalDecreaseRect != null)
                 {
-                    var maxHeight = ActualHeight - _verticalThumb.ActualHeight;
+                    var maxHeight = height - _verticalThumb.ActualHeight;
                     _verticalDecreaseRect.Height = (float)((Value - Minimum) / (Maximum - Minimum)) * maxHeight;
                 }
 			}

@@ -63,11 +63,6 @@ namespace Windows.UI.Xaml.Controls
 
 		private void UpdateBorder()
 		{
-			UpdateBorder(false);
-		}
-
-		private void UpdateBorder(bool willUpdateMeasures)
-		{
 			if (IsLoaded)
 			{
 				_borderRenderer.UpdateLayers(
@@ -76,15 +71,14 @@ namespace Windows.UI.Xaml.Controls
 					BorderThickness,
 					BorderBrush,
 					CornerRadius,
-					Padding,
-					willUpdateMeasures
+					Padding
 				);
 			}
 		}
 
 		partial void OnPaddingChangedPartial(Thickness oldValue, Thickness newValue)
 		{
-			UpdateBorder(true);
+			UpdateBorder();
 		}
 	}
 }
