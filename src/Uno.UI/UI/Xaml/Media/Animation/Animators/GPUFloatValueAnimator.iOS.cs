@@ -13,6 +13,7 @@ using Uno.Extensions;
 using Uno.Logging;
 using Windows.UI.Composition;
 using Uno.UI;
+using Uno.UI.Extensions;
 
 namespace Windows.UI.Xaml.Media.Animation
 {
@@ -298,7 +299,7 @@ namespace Windows.UI.Xaml.Media.Animation
 			{
 				transform.Angle = finalValue;
 
-				return transform.ToMatrix(new Point(0, 0));
+				return transform.MatrixCore;
 			}
 		}
 
@@ -317,7 +318,7 @@ namespace Windows.UI.Xaml.Media.Animation
 				{
 					transform.ScaleX = finalValue;
 
-					return transform.ToMatrix(new Point(0, 0));
+					return transform.MatrixCore;
 				}
 			}
 			else if (animatedItem.PropertyName.Equals("ScaleY")
@@ -330,7 +331,7 @@ namespace Windows.UI.Xaml.Media.Animation
 				{
 					transform.ScaleY = finalValue;
 
-					return transform.ToMatrix(new Point(0, 0));
+					return transform.MatrixCore;
 				}
 			}
 			else
@@ -452,7 +453,7 @@ namespace Windows.UI.Xaml.Media.Animation
 
 			void RemoveTempCenter(CALayer layer, float finalValue)
 			{
-				layer.Transform = CATransform3D.MakeFromAffine(Transform.ToNative(commitAnimationValue(finalValue)));
+				layer.Transform = commitAnimationValue(finalValue).ToTransform3D();
 				layer.AnchorPoint = originalAnchor;
 			}
 

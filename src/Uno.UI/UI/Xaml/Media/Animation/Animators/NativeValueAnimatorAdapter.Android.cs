@@ -17,18 +17,18 @@ namespace Windows.UI.Xaml.Media.Animation
 
 		private readonly ValueAnimator _adaptee;
 		private readonly Action _prepareAnimation;
-		private readonly Action<float> _commitAnimation;
+		private readonly Action _completeAnimation;
 
 		public NativeValueAnimatorAdapter(ValueAnimator adaptee)
 			: this(adaptee, null, null)
 		{
 		}
 
-		public NativeValueAnimatorAdapter(ValueAnimator adaptee, Action prepareAnimation, Action<float> commitAnimation)
+		public NativeValueAnimatorAdapter(ValueAnimator adaptee, Action prepareAnimation, Action completeAnimation)
 		{
 			_adaptee = adaptee;
 			_prepareAnimation = prepareAnimation;
-			_commitAnimation = commitAnimation;
+			_completeAnimation = completeAnimation;
 		}
 
 		/// <inheritdoc />
@@ -188,7 +188,7 @@ namespace Windows.UI.Xaml.Media.Animation
 		/// <inheritdoc />
 		public void Start()
 		{
-			if (_prepareAnimation != null && _prepareAnimation != null)
+			if (_prepareAnimation != null && _completeAnimation != null)
 			{
 				_prepareAnimation?.Invoke();
 				_adaptee.AnimationEnd += End;
@@ -199,7 +199,7 @@ namespace Windows.UI.Xaml.Media.Animation
 			void End(object sender, EventArgs eventArgs)
 			{
 				_adaptee.AnimationEnd -= End;
-				_commitAnimation((float)(Java.Lang.Float)_adaptee.AnimatedValue);
+				_completeAnimation();
 			}
 		}
 

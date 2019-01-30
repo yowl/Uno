@@ -72,7 +72,7 @@ namespace Uno.UI.Media
 		public void UpdateOrigin(Point origin)
 		{
 			CurrentOrigin = origin;
-			Update();
+			Update(isOriginChanged: true);
 		}
 
 		public void UpdateSize(Size size)
@@ -84,20 +84,15 @@ namespace Uno.UI.Media
 		private void UpdateOnTransformPropertyChanged(object snd, EventArgs args)
 			=> Update();
 
-		private void Update(bool isSizeChanged = false)
+		private void Update(bool isSizeChanged = false, bool isOriginChanged = false)
 		{
-			var matrix = CurrentSize.IsEmpty || CurrentSize.Width == 0 || CurrentSize.Width == 0
-				? Matrix3x2.Identity
-				: Transform.ToMatrix(CurrentOrigin, CurrentSize);
-				//: Transform.ToMatrix(new Point(0, 0));
-
-			Apply(matrix, isSizeChanged);
+			Apply(isSizeChanged, isOriginChanged);
 		}
 
 		/// <summary>
 		/// Natively applies this current render transform to its <see cref="Owner"/>
 		/// </summary>
-		partial void Apply(Matrix3x2 matrix, bool isSizeChanged);
+		partial void Apply(bool isSizeChanged, bool isOriginChanged);
 
 		/// <summary>
 		/// Natively cleanup this current render transform from its <see cref="Owner"/> before being removed.

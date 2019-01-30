@@ -51,22 +51,35 @@ namespace Uno.UI.Media
 			}
 		}
 
-		partial void Apply(Matrix3x2 matrix, bool isSizeChanged)
+		partial void Apply(bool isSizeChanged, bool isOriginChanged)
 		{
 			if (Transform.IsAnimating)
 			{
+				// The transform is animating, so we disable the matrix "static transform" and let the animation apply its values
 				Matrix.SetValues(_identity);
 				if (isSizeChanged)
 				{
-					// We must update the PivotX and PivotY
+					// Even if while animating, we must update the PivotX and PivotY
 					AnimatorFactory.UpdatePivotWhileAnimating(
 						Transform,
 						CurrentSize.Width * CurrentOrigin.X,
 						CurrentSize.Height * CurrentOrigin.Y);
 				}
 			}
+			else if (CurrentSize.IsEmpty || CurrentSize.Width == 0 || CurrentSize.Width == 0)
+			{
+				// Element was not measured yet (or unloaded ?), as on Android the Matrix includes the center,
+				// it's dependent of the element size, so we cannot get a valid transform matrix.
+				// Instead we just make sure to reset all values.
+				Matrix.SetValues(_identity);
+				Owner.PivotX = 0;
+				Owner.PivotY = 0;
+			}
 			else
 			{
+				// The element is measured and not animating, we can update the "static transform" matrix.
+				var matrix = Transform.ToMatrix(CurrentOrigin, CurrentSize);
+
 				Matrix.SetValues(new[]
 				{
 					matrix.M11, matrix.M21, ViewHelper.LogicalToPhysicalPixels(matrix.M31),
@@ -78,6 +91,7 @@ namespace Uno.UI.Media
 
 				if (!isSizeChanged)
 				{
+					// A property on the Transform was change, request a redraw to apply the updated matrix
 					Owner.Invalidate();
 				}
 			}
@@ -89,36 +103,5 @@ namespace Uno.UI.Media
 
 			Owner.Invalidate();
 		} 
-
-		//internal class MatrixTransformation : Transformation
-		//{
-		//	public static MatrixTransformation Identity { get; } = new MatrixTransformation();
-
-		//	public MatrixTransformation()
-		//		: this(Matrix3x2.Identity)
-		//	{
-		//	}
-
-		//	public MatrixTransformation(Matrix3x2 matrix)
-		//	{
-		//		Alpha = 1;
-		//		TransformationType = TransformationTypes.Matrix;
-
-		//		Set(matrix);
-		//	}
-
-		//	public bool IsIdentity { get; private set; }
-
-		//	public void Set(Matrix3x2 matrix)
-		//	{
-		//		Matrix.SetValues(new[]
-		//		{
-		//			matrix.M11, matrix.M21, ViewHelper.LogicalToPhysicalPixels(matrix.M31),
-		//			matrix.M12, matrix.M22, ViewHelper.LogicalToPhysicalPixels(matrix.M32),
-		//			0, 0, 1
-		//		});
-		//		IsIdentity = matrix.IsIdentity;
-		//	}
-		//}
 	}
 }

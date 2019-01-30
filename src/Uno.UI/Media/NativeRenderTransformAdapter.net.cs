@@ -7,7 +7,7 @@ namespace Uno.UI.Media
 {
 	partial class NativeRenderTransformAdapter
 	{
-		partial void Apply(Matrix3x2 matrix, bool isSizeChanged)
+		partial void Apply(bool isSizeChanged, bool isOriginChanged)
 		{
 			throw new NotImplementedException("RenderTransform are not supported on this platform");
 		}

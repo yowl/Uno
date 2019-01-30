@@ -280,7 +280,7 @@ namespace Windows.UI.Xaml.Media.Animation
 			composite.View.Rotation = (float)composite.Rotation;
 		};
 
-		private static Action<float> Complete(Transform transform) => finalValue =>
+		private static Action Complete(Transform transform) => () =>
 		{
 			// Remove the native values
 			ResetPivot(transform.View);

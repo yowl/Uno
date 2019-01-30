@@ -4,7 +4,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Windows.Foundation;
-using Uno.UI.Controls;
+using Uno.Extensions;
 
 #if __ANDROID__
 using _View = Android.Views.View;
@@ -32,17 +32,29 @@ namespace Windows.UI.Xaml.Media
 			// Don't update the internal value if the value is being animated.
 			// The value is being animated by the platform itself.
 
-			if (snd is Transform transform
-				&& !(args.NewPrecedence == DependencyPropertyValuePrecedences.Animations && args.BypassesPropagation))
+			if (snd is Transform transform)
 			{
-				transform.NotifyChanged();
+				transform.MatrixCore = transform.ToMatrix(new Point(0, 0));
+
+				if (args.NewPrecedence != DependencyPropertyValuePrecedences.Animations && !args.BypassesPropagation)
+				{
+					transform.NotifyChanged();
+				}
 			}
 		};
 
+		/// <summary>
+		/// Notifies that a value of this transform changed (usually this means that the <see cref="Matrix"/> has been updated).
+		/// </summary>
 		internal event EventHandler Changed;
 
 		protected void NotifyChanged()
 			=> Changed?.Invoke(this, EventArgs.Empty);
+
+		/// <summary>
+		/// The matrix used by this transformation
+		/// </summary>
+		internal Matrix3x2 MatrixCore { get; private set; }
 
 		/// <summary>
 		/// Converts the transform to a standard transform matrix
@@ -64,6 +76,57 @@ namespace Windows.UI.Xaml.Media
 		// But we can declare a Transform as a static resource and use it on multiple views.
 		// Note: This is now used only for animations
 		internal _View View { get; set; }
+
+		#region GeneralTransform overrides
+		/// <inheritdoc />
+		protected override GeneralTransform InverseCore
+		{
+			get
+			{
+				var matrix = MatrixCore;
+				if (matrix.IsIdentity)
+				{
+					return this;
+				}
+				else
+				{
+					// The Inverse transform is not expected to reflect future changes on this transform
+					// It means that it's  acceptable to capture the current 'Matrix'
+					Matrix3x2.Invert(matrix, out var inverse);
+					return new MatrixTransform
+					{
+						Matrix = new Matrix(inverse)
+					};
+				}
+			}
+		}
+
+		/// <inheritdoc />
+		protected override bool TryTransformCore(Point inPoint, out Point outPoint)
+		{
+			var matrix = MatrixCore;
+			if (matrix.IsIdentity)
+			{
+				outPoint = inPoint;
+				return false;
+			}
+			else
+			{
+				outPoint = new Point
+				(
+					(inPoint.X * matrix.M11) + (inPoint.Y * matrix.M21) + matrix.M31,
+					(inPoint.X * matrix.M12) + (inPoint.Y * matrix.M22) + matrix.M32
+				);
+				return true;
+			}
+		}
+
+		/// <inheritdoc />
+		protected override Rect TransformBoundsCore(Rect rect)
+		{
+			return rect.Transform(MatrixCore);
+		}
+		#endregion
 	}
 }
 
