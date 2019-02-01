@@ -169,6 +169,7 @@ namespace Windows.UI.Xaml
 
 		internal void GoToState(IFrameworkElement element, VisualState state, VisualState originalState, bool useTransitions, Action onStateChanged)
 		{
+			DEBUG.Trace($"Go to state {state?.Name}");
 			if (this.Log().IsEnabled(Microsoft.Extensions.Logging.LogLevel.Debug))
 			{
 				this.Log().DebugFormat("Go to state [{0}/{1}] on [{2}]", Name, state?.Name, element);
@@ -246,7 +247,15 @@ namespace Windows.UI.Xaml
 			{
 				foreach (var setter in this.CurrentState.Setters.OfType<Setter>())
 				{
-					setter.ApplyValue(DependencyPropertyValuePrecedences.Animations, element);
+					DEBUG.Trace($"State {state?.Name}: setter {setter}");
+					try
+					{
+						setter.ApplyValue(DependencyPropertyValuePrecedences.Animations, element);
+					}
+					catch (Exception e)
+					{
+						DEBUG.Trace($"State {state?.Name} [ERROR]: {e}");
+					}
 				}
 			}
 

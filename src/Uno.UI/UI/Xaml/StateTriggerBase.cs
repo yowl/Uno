@@ -25,7 +25,7 @@ namespace Windows.UI.Xaml
 		{
 			if (this.Log().IsEnabled(Microsoft.Extensions.Logging.LogLevel.Debug))
 			{
-				this.Log().DebugFormat($"State [{GetType().Name}] isActive:{isActive}");
+				this.Log().DebugFormat($"State [{Owner?.Name}] isActive:{isActive}");
 			}
 
 			InternalIsActive = isActive;

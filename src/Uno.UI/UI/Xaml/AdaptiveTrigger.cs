@@ -10,29 +10,42 @@ namespace Windows.UI.Xaml
 
 		public AdaptiveTrigger()
 		{
-			UpdateState();
+			TryUpdateState();
 		}
 
 		private void OnCurrentWindowSizeChanged(object sender, Core.WindowSizeChangedEventArgs e)
 		{
-			UpdateState();
+			// No matter the new size of the window, we must update
+			UpdateState(Window.Current.Bounds);
 		}
 
-		private void UpdateState()
+		private void TryUpdateState()
 		{
 			var size = Window.Current.Bounds;
+			if (size.Width > 0 && size.Height > 0)
+			{
+				// On WASM bounds may start a 0, so avoid to trigger state until the windows bound was set
+				UpdateState(size);
+			}
+		}
 
+		private void UpdateState(Rect size)
+		{
 			var isMinWidthSet = MinWindowWidth != -1;
 			var isMinHeightSet = MinWindowHeight != -1;
+
+			if (!isMinWidthSet && !isMinHeightSet)
+			{
+				// So threshold set yet, skip the update (even if the size of the window effectively changed)
+				return;
+			}
 
 			var widthIsActive = isMinWidthSet && size.Width >= MinWindowWidth;
 			var heightIsActive = isMinHeightSet && size.Height >= MinWindowHeight;
 
-			SetActive(
-				(isMinWidthSet && isMinHeightSet && heightIsActive && widthIsActive)
+			SetActive((isMinWidthSet && isMinHeightSet && heightIsActive && widthIsActive)
 				|| (isMinWidthSet && widthIsActive)
-				|| (isMinHeightSet && heightIsActive)
-			);
+				|| (isMinHeightSet && heightIsActive));
 		}
 
 		#region MinWindowHeight DependencyProperty
@@ -49,7 +62,7 @@ namespace Windows.UI.Xaml
 
 		private void OnMinWindowHeightChanged(DependencyPropertyChangedEventArgs e)
 		{
-			UpdateState();
+			TryUpdateState();
 		}
 
 		#endregion
@@ -69,7 +82,7 @@ namespace Windows.UI.Xaml
 
 		private void OnMinWindowWidthChanged(DependencyPropertyChangedEventArgs e)
 		{
-			UpdateState();
+			TryUpdateState();
 		}
 
 		#endregion

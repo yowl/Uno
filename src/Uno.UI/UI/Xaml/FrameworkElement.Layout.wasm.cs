@@ -5,6 +5,7 @@ using Uno.Extensions;
 using Uno.Logging;
 using Windows.Foundation;
 using Microsoft.Extensions.Logging;
+using Uno.Extensions.ValueType;
 using Uno.UI;
 using static System.Math;
 using static Uno.UI.LayoutHelper;
@@ -15,6 +16,7 @@ namespace Windows.UI.Xaml
 	{
 		private Size _unclippedDesiredSize;
 		private Point _visualOffset;
+		//private Size _visualInnerInkSize;
 
 		/// <summary>
 		/// The origin of the view's bounds relative to its parent.
@@ -75,6 +77,7 @@ namespace Windows.UI.Xaml
 			desiredSize = desiredSize.AtLeast(minSize);
 
 			_unclippedDesiredSize = desiredSize;
+			//_unclippedDesiredSize = desiredSize.Add(marginSize);
 
 			desiredSize = desiredSize.AtMost(maxSize);
 
@@ -124,6 +127,18 @@ namespace Windows.UI.Xaml
 			var (minSize, maxSize) = this.GetMinMax();
 			var marginSize = this.GetMarginSize();
 
+			//arrangeSize = arrangeSize.AtLeast(_unclippedDesiredSize);
+
+			//if (HorizontalAlignment != HorizontalAlignment.Stretch)
+			//{
+			//	arrangeSize.Width = _unclippedDesiredSize.Width;
+			//}
+
+			//if (VerticalAlignment != VerticalAlignment.Stretch)
+			//{
+			//	arrangeSize.Height = _unclippedDesiredSize.Height;
+			//}
+
 			arrangeSize = arrangeSize
 				.Subtract(marginSize)
 				.AtLeast(new Size(0, 0));
@@ -161,6 +176,7 @@ namespace Windows.UI.Xaml
 			);
 
 			ArrangeNative(offset, oldRenderSize);
+			//ArrangeNative(offset, innerInkSize);
 
 			if (_log.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Debug))
 			{
@@ -188,15 +204,25 @@ namespace Windows.UI.Xaml
 			}
 		}
 
-		private void ArrangeNative(Point offset, Size oldRenderSize)
+		private void ArrangeNative(Point offset, Size oldRenderSize) //innerInkSize)
 		{
+			//var oldOffset = _visualOffset;
+			//_visualOffset = offset;
+			//var oldInnerInkSize = _visualInnerInkSize;
+			//_visualInnerInkSize = innerInkSize;
+
+			//if (oldOffset != offset || oldInnerInkSize != innerInkSize)
+			//{
+
 			var oldOffset = _visualOffset;
 			_visualOffset = offset;
-			
-			var oldRect = new Rect(oldOffset, oldRenderSize); 
+
+			var oldRect = new Rect(oldOffset, oldRenderSize);
 			var newRect = new Rect(offset, RenderSize);
 			if (oldRect != newRect)
 			{
+				//var newRect = new Rect(offset, RenderSize);
+
 				if (
 					newRect.Width < 0
 					|| newRect.Height < 0
@@ -227,6 +253,7 @@ namespace Windows.UI.Xaml
 			else
 			{
 				_log.DebugIfEnabled(() => $"{this}: ArrangeNative({offset}, {oldRenderSize}) -- SKIPPED (no change)");
+				//_log.DebugIfEnabled(() => $"{this}: ArrangeNative({offset}, {innerInkSize}) -- SKIPPED (no change)");
 			}
 		}
 	}

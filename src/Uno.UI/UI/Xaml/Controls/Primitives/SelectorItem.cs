@@ -59,7 +59,7 @@ namespace Windows.UI.Xaml.Controls.Primitives
 			}
 		}
 
-		private class CommonStates
+		private static class CommonStates
 		{
 			public const string Selected = "Selected";
 			public const string Normal = "Normal";
@@ -67,7 +67,7 @@ namespace Windows.UI.Xaml.Controls.Primitives
 			public const string PressedSelected = "PressedSelected";
 		}
 
-		private class DisabledStates
+		private static class DisabledStates
 		{
 			public const string Enabled = "Enabled";
 			public const string Disabled = "Disabled";
@@ -89,7 +89,7 @@ namespace Windows.UI.Xaml.Controls.Primitives
 
 		internal bool IsPressed
 		{
-			get { return _isPressed; }
+			get => _isPressed;
 			set
 			{
 				using (InterceptSetNeedsLayout())
@@ -106,7 +106,7 @@ namespace Windows.UI.Xaml.Controls.Primitives
 		/// </summary>
 		internal bool IsMultiselectEnabled
 		{
-			get { return _isMultiSelectedEnabled; }
+			get => _isMultiSelectedEnabled;
 			set {
 
 				if (_isMultiSelectedEnabled != value)

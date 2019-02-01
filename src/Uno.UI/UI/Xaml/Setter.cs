@@ -145,6 +145,9 @@ namespace Windows.UI.Xaml
 			_bindingPath?.ClearValue();
 		}
 
+		/// <inheritdoc />
+		public override string ToString() => DebuggerDisplay;
+
 		private string DebuggerDisplay => $"Property={Property?.Name ?? "<null>"},Target={Target?.Target?.ToString() ?? Target?.TargetName ?? "<null>"},Value={Value?.ToString() ?? "<null>"}";
 	}
 }
