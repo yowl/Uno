@@ -1,21 +1,22 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Diagnostics;
-using System.Globalization;
+using System.Threading.Tasks;
 using System.Xml;
-using Uno.Roslyn;
+using Microsoft.Build.Execution;
 using Microsoft.CodeAnalysis;
 using Uno.Extensions;
-using Microsoft.Build.Execution;
 using Uno.Logging;
+using Uno.Roslyn;
+using Uno.SourceGeneration;
 
 namespace Uno.UI.SourceGenerators.XamlGenerator
 {
-    internal class XamlCodeGeneration
+	internal class XamlCodeGeneration
 	{
+		private SourceGeneratorContext _ctx;
 		private string[] _xamlSourceFiles;
 		private string _targetPath;
 		private readonly string _defaultLanguage;
@@ -42,15 +43,18 @@ namespace Uno.UI.SourceGenerators.XamlGenerator
 		private readonly bool _forceGeneration;
 #pragma warning restore 649 // Unused member
 
-		public XamlCodeGeneration(Compilation sourceCompilation, ProjectInstance msbProject, Project roslynProject)
+		public XamlCodeGeneration(SourceGeneratorContext ctx)
 		{
+			_ctx = ctx;
+
+			var msbProject = ctx.GetProjectInstance();
 			_legacyTypes = msbProject
 				.GetItems("LegacyTypes")
 				.Select(i => i.EvaluatedInclude)
 				.ToList()
 				.ToDictionary(fullyQualifiedName => fullyQualifiedName.Split('.').Last());
 
-			_medataHelper = new RoslynMetadataHelper("Debug", sourceCompilation, msbProject, roslynProject, null, _legacyTypes);
+			_medataHelper = new RoslynMetadataHelper("Debug", ctx.Compilation, msbProject, ctx.Project, null, _legacyTypes);
 			_assemblySearchPaths = new string[0];
 			_projectInstance = msbProject;
 
@@ -87,7 +91,7 @@ namespace Uno.UI.SourceGenerators.XamlGenerator
 				.Select(i => i.EvaluatedInclude)
 				.ToArray();
 
-			if(bool.TryParse(msbProject.GetProperty("UseUnoXamlParser")?.EvaluatedValue, out var useUnoXamlParser) && useUnoXamlParser)
+			if (bool.TryParse(msbProject.GetProperty("UseUnoXamlParser")?.EvaluatedValue, out var useUnoXamlParser) && useUnoXamlParser)
 			{
 				XamlRedirection.XamlConfig.IsUnoXaml = useUnoXamlParser || XamlRedirection.XamlConfig.IsMono;
 			}
@@ -134,26 +138,22 @@ namespace Uno.UI.SourceGenerators.XamlGenerator
 			_isWasm = msbProject.GetProperty("DefineConstants").EvaluatedValue?.Contains("__WASM__") ?? false;
 		}
 
-		public KeyValuePair<string, string>[] Generate()
+		public Dictionary<string, string> Generate(IEnumerable<XamlFileDefinition> files, string[] resourceKeys)
 		{
 			this.Log().InfoFormat("Xaml Source Generation is using the {0} Xaml Parser", XamlRedirection.XamlConfig.IsUnoXaml ? "Uno.UI" : "System");
 
 			var lastBinaryUpdateTime = _forceGeneration ? DateTime.MaxValue : GetLastBinaryUpdateTime();
-
-			var resourceKeys = GetResourceKeys();
-			var files = new XamlFileParser(_excludeXamlNamespaces, _includeXamlNamespaces).ParseFiles(_xamlSourceFiles);
 
 			var globalStaticResourcesMap = BuildAssemblyGlobalStaticResourcesMap(files);
 
 			var filesQuery = files
 				.ToArray();
 
-			var outputFiles = filesQuery
+			return filesQuery
 #if !DEBUG
 				.AsParallel()
 #endif
-				.Select(file => new KeyValuePair<string, string>(
-						file.UniqueID,
+				.ToDictionary(file => file.UniqueID, file =>
 						new XamlFileGenerator(
 							file: file,
 							targetPath: _targetPath,
@@ -170,19 +170,11 @@ namespace Uno.UI.SourceGenerators.XamlGenerator
 							defaultLanguage: _defaultLanguage,
 							isWasm: _isWasm,
 							isDebug: _isDebug
-						)
-						.GenerateFile()
-					)
-				)
-				.ToList();
+						).GenerateFile());
 
-
-			outputFiles.Add(new KeyValuePair<string, string>("GlobalStaticResources", GenerateGlobalResources(files)));
-
-			return outputFiles.ToArray();
 		}
 
-		private XamlGlobalStaticResourcesMap BuildAssemblyGlobalStaticResourcesMap(XamlFileDefinition[] files)
+		private XamlGlobalStaticResourcesMap BuildAssemblyGlobalStaticResourcesMap(IEnumerable<XamlFileDefinition> files)
 		{
 			var map = new XamlGlobalStaticResourcesMap();
 
@@ -192,20 +184,20 @@ namespace Uno.UI.SourceGenerators.XamlGenerator
 			return map;
 		}
 
-		private void BuildAmbientResources(XamlFileDefinition[] files, XamlGlobalStaticResourcesMap map)
+		private void BuildAmbientResources(IEnumerable<XamlFileDefinition> files, XamlGlobalStaticResourcesMap map)
 		{
 			// Lookup for GlobalStaticResources classes in external assembly
 			// references only, and in Uno.UI itself for generic.xaml-like resources.
 
 			var query = from ext in _medataHelper.Compilation.ExternalReferences
-					let sym = _medataHelper.Compilation.GetAssemblyOrModuleSymbol(ext) as IAssemblySymbol
-					where sym != null
-					from module in sym.Modules
-					from reference in module.ReferencedAssemblies
-					where reference.Name == "Uno.UI" || sym.Name == "Uno.UI"
-					from typeName in sym.GlobalNamespace.GetNamespaceTypes()
-					where typeName.Name.EndsWith("GlobalStaticResources")
-					select typeName;
+						let sym = _medataHelper.Compilation.GetAssemblyOrModuleSymbol(ext) as IAssemblySymbol
+						where sym != null
+						from module in sym.Modules
+						from reference in module.ReferencedAssemblies
+						where reference.Name == "Uno.UI" || sym.Name == "Uno.UI"
+						from typeName in sym.GlobalNamespace.GetNamespaceTypes()
+						where typeName.Name.EndsWith("GlobalStaticResources")
+						select typeName;
 
 			_ambientGlobalResources = query.Distinct().ToArray();
 
@@ -223,7 +215,7 @@ namespace Uno.UI.SourceGenerators.XamlGenerator
 			}
 		}
 
-		private void BuildLocalProjectResources(XamlFileDefinition[] files, XamlGlobalStaticResourcesMap map)
+		private void BuildLocalProjectResources(IEnumerable<XamlFileDefinition> files, XamlGlobalStaticResourcesMap map)
 		{
 			foreach (var file in files)
 			{
@@ -430,6 +422,34 @@ namespace Uno.UI.SourceGenerators.XamlGenerator
 			}
 
 			return writer.ToString();
+		}
+
+		public void Generate()
+		{
+			var resourceKeys = GetResourceKeys();
+			var parser = new XamlFileParser(_excludeXamlNamespaces, _includeXamlNamespaces);
+			var files = parser.ParseFiles(_xamlSourceFiles);
+			var filesToProcess = Partitioner.Create(0, files.Length-1, 40);
+
+			Parallel.ForEach(filesToProcess, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount },
+			(range, loopState) =>
+			{
+				var xamlDefs = new List<XamlFileDefinition>();
+
+				for (int i = range.Item1; i < range.Item2; i++)
+				{
+					xamlDefs.Add(files[i]);
+				}
+
+				var trees = Generate(xamlDefs, resourceKeys);
+
+				foreach (var tree in trees)
+				{
+					_ctx.AddCompilationUnit(tree.Key, tree.Value);
+				}
+			});
+
+			_ctx.AddCompilationUnit("GlobalStaticResources", GenerateGlobalResources(files));
 		}
 	}
 }
