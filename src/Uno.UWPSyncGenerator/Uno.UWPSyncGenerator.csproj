@@ -6,6 +6,7 @@
 
 		<AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
 		<GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+		<LangVersion>7.1</LangVersion>
 	</PropertyGroup>
 	
 	<ItemGroup>

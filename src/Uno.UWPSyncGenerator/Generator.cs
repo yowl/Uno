@@ -1,18 +1,70 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.MSBuild;
 using Uno.Extensions;
-using Uno.Logging;
 
 namespace Uno.UWPSyncGenerator
 {
+	public static class TaskExtensions
+	{
+		public static async Task ParallelForEachAsync<T>(this IEnumerable<T> source, Func<T, Task> funcBody, int maxDoP = 4)
+		{
+			async Task AwaitPartition(IEnumerator<T> partition)
+			{
+				using (partition)
+				{
+					while (partition.MoveNext())
+					{ await funcBody(partition.Current); }
+				}
+			}
+
+			await Task.WhenAll(
+				Partitioner
+					.Create(source)
+					.GetPartitions(maxDoP)
+					.AsParallel()
+					.Select(p => AwaitPartition(p)));
+		}
+
+		public static async Task ParallelForEachAsync(this IEnumerable<Task> source, int maxDoP = 4)
+		{
+			await ParallelForEachAsync(source, async t => await t, Environment.ProcessorCount);
+		}
+	}
+
+	internal static class ProcessExtensions
+	{
+		/// <summary>
+		/// Waits asynchronously for the process to exit.
+		/// </summary>
+		/// <param name="process">The process to wait for cancellation.</param>
+		/// <param name="cancellationToken">A cancellation token. If invoked, the task will return 
+		/// immediately as canceled.</param>
+		/// <returns>A Task representing waiting for the process to end.</returns>
+		public static Task WaitForExitAsync(this Process process,
+			CancellationToken cancellationToken = default(CancellationToken))
+		{
+			var tcs = new TaskCompletionSource<object>();
+			process.EnableRaisingEvents = true;
+			process.Exited += (sender, args) => tcs.TrySetResult(null);
+
+			if (cancellationToken != default(CancellationToken))
+				cancellationToken.Register(tcs.SetCanceled);
+
+			return tcs.Task;
+		}
+	}
+
 	abstract class Generator
 	{
 		private const string net46Define = "NET46";
@@ -41,29 +93,54 @@ namespace Uno.UWPSyncGenerator
 			RegisterAssemblyLoader();
 		}
 
-		public virtual void Build(string basePath, string baseName, string sourceAssembly)
+		public virtual async Task Build(string basePath, string baseName, string sourceAssembly)
 		{
 			Directory.SetCurrentDirectory(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
-			InitializeRoslyn();
+			
+			await InitializeRoslyn();
 
 			Console.WriteLine($"Generating for {baseName} {sourceAssembly}");
 
-			_referenceCompilation = LoadProject(@"..\..\..\..\Uno.UWPSyncGenerator.Reference\Uno.UWPSyncGenerator.Reference.csproj");
-			_iOSCompilation = LoadProject($@"{basePath}\{baseName}.csproj", "xamarinios10");
-			_androidCompilation = LoadProject($@"{basePath}\{baseName}.csproj", "MonoAndroid80");
-			_net46Compilation = LoadProject($@"{basePath}\{baseName}.csproj", "net46");
-			_wasmCompilation = LoadProject($@"{basePath}\{baseName}.csproj", "netstandard2.0");
-			_macCompilation = LoadProject($@"{basePath}\{baseName}.csproj", "xamarinmac20");
+			var tasks = new List<Task>()
+			{
+				BuildReferenceCompilation(baseName, sourceAssembly),
+				BuildIOSCompilation(basePath, baseName),
+				BuildAndroidCompilation(basePath, baseName),
+				BuildNet46Compilation(basePath, baseName),
+				BuildWasmCompilation(basePath, baseName),
+				BuildMacOsCompilation(basePath, baseName)
+			};
 
-			_iOSBaseSymbol = _iOSCompilation.GetTypeByMetadataName("UIKit.UIView");
-			_androidBaseSymbol = _androidCompilation.GetTypeByMetadataName("Android.Views.View");
+			await tasks.ParallelForEachAsync(Environment.ProcessorCount/2);
+		}
+
+		private async Task BuildMacOsCompilation(string basePath, string baseName)
+		{
+			_macCompilation = await LoadProject($@"{basePath}\{baseName}.csproj", "xamarinmac20");
 			_macOSBaseSymbol = _macCompilation.GetTypeByMetadataName("AppKit.NSView");
+		}
 
+		private async Task BuildWasmCompilation(string basePath, string baseName) => _wasmCompilation = await LoadProject($@"{basePath}\{baseName}.csproj", "netstandard2.0");
+		private async Task BuildNet46Compilation(string basePath, string baseName) => _net46Compilation = await LoadProject($@"{basePath}\{baseName}.csproj", "net46");
+		private async Task BuildAndroidCompilation(string basePath, string baseName)
+		{
+			_androidCompilation = await LoadProject($@"{basePath}\{baseName}.csproj", "MonoAndroid80");
+			_androidBaseSymbol = _androidCompilation.GetTypeByMetadataName("Android.Views.View");
+		}
+
+		private async Task BuildIOSCompilation(string basePath, string baseName)
+		{
+			_iOSCompilation = await LoadProject($@"{basePath}\{baseName}.csproj", "xamarinios10");
+			_iOSBaseSymbol = _iOSCompilation.GetTypeByMetadataName("UIKit.UIView");
+		}
+
+		private async Task BuildReferenceCompilation(string baseName, string sourceAssembly)
+		{
+			_referenceCompilation = await LoadProject(@"..\..\..\..\Uno.UWPSyncGenerator.Reference\Uno.UWPSyncGenerator.Reference.csproj");
 			_voidSymbol = _referenceCompilation.GetTypeByMetadataName("System.Void");
 			_dependencyPropertySymbol = _referenceCompilation.GetTypeByMetadataName("Windows.UI.Xaml.DependencyProperty");
 			UIElementSymbol = _referenceCompilation.GetTypeByMetadataName("Windows.UI.Xaml.UIElement");
 			var a = _referenceCompilation.GetTypeByMetadataName("Windows.UI.ViewManagement.StatusBar");
-
 
 			var origins = from externalRedfs in _referenceCompilation.ExternalReferences
 						  where Path.GetFileNameWithoutExtension(externalRedfs.Display).StartsWith("Windows.Foundation")
@@ -98,7 +175,7 @@ namespace Uno.UWPSyncGenerator
 
 		protected abstract void ProcessType(INamedTypeSymbol type, INamespaceSymbol ns);
 
-		private static void InitializeRoslyn()
+		private static async Task InitializeRoslyn()
 		{
 			var pi = new System.Diagnostics.ProcessStartInfo(
 				"cmd.exe",
@@ -111,7 +188,7 @@ namespace Uno.UWPSyncGenerator
 			};
 
 			var process = System.Diagnostics.Process.Start(pi);
-			process.WaitForExit();
+			await process.WaitForExitAsync();
 			var installPath = process.StandardOutput.ReadToEnd().Split('\r').First();
 
 			Environment.SetEnvironmentVariable("VSINSTALLDIR", installPath);
@@ -708,7 +785,7 @@ namespace Uno.UWPSyncGenerator
 		{
 			foreach (var eventMember in type.GetMembers().OfType<IEventSymbol>())
 			{
-				if(!IsNotUWPMapping(type, eventMember))
+				if (!IsNotUWPMapping(type, eventMember))
 				{
 					return;
 				}
@@ -1390,7 +1467,7 @@ namespace Uno.UWPSyncGenerator
 			}
 		}
 
-		private static Compilation LoadProject(string projectFile, string targetFramework = null)
+		private static async Task<Compilation> LoadProject(string projectFile, string targetFramework = null)
 		{
 			Console.WriteLine($"Loading for {targetFramework}: {Path.GetFileName(projectFile)}");
 
@@ -1404,6 +1481,7 @@ namespace Uno.UWPSyncGenerator
 								//{ "DesignTimeBuild", "true" },
 								//{ "UseHostCompilerIfAvailable", "false" },
 								//{ "UseSharedCompilation", "false" },
+								{ "RunCodeAnalysis", "false" },
 							};
 
 			if (targetFramework != null)
@@ -1411,60 +1489,62 @@ namespace Uno.UWPSyncGenerator
 				properties.Add("TargetFramework", targetFramework);
 			}
 
-			var ws = MSBuildWorkspace.Create(properties);
-
-			ws.LoadMetadataForReferencedProjects = true;
-
-			ws.WorkspaceFailed +=
-				(s, e) => Console.WriteLine(e.Diagnostic.ToString());
-
-			var project = ws.OpenProjectAsync(projectFile).Result;
-
-			var generatedDocs = project
-				.Documents
-				.Where(d => d.FilePath.Contains("\\Generated\\"))
-				.Select(d => d.Id)
-				.ToArray();
-
-			if (generatedDocs.Any())
+			using (var ws = MSBuildWorkspace.Create(properties))
 			{
-				foreach (var doc in generatedDocs)
+				ws.LoadMetadataForReferencedProjects = true;
+
+				ws.WorkspaceFailed +=
+					(s, e) => Console.WriteLine(e.Diagnostic.ToString());
+
+				var project = await ws.OpenProjectAsync(projectFile);
+
+				var generatedDocs = project
+					.Documents
+					.AsParallel().WithDegreeOfParallelism(Environment.ProcessorCount/2)
+					.Where(d => d.FilePath.Contains("\\Generated\\"))
+					.Select(d => d.Id)
+					.ToArray();
+
+				if (generatedDocs.Any())
 				{
-					project = project.RemoveDocument(doc);
+					foreach (var doc in generatedDocs)
+					{
+						project = project.RemoveDocument(doc);
+					}
 				}
+
+				var metadataLessProjects = ws
+					.CurrentSolution
+					.Projects
+					.Where(p => p.MetadataReferences.None())
+					.ToArray();
+
+				if (metadataLessProjects.Any())
+				{
+					// In this case, this may mean that Rolsyn failed to execute some msbuild task that loads the
+					// references in a UWA project (or NuGet 3.0+ with project.json, more specifically). For these
+					// projects, references are materialized through a task using a output parameter that injects 
+					// "References" nodes. If this task fails, no references are loaded, and simple type resolution
+					// such "int?" may fail.
+
+					// Additionally, it may happen that projects are loaded using the callee's Configuration/Platform, which
+					// may not exist in all projects. This can happen if the project does not have a proper
+					// fallback mecanism in place.
+
+					SourceGeneration.Host.ProjectLoader.LoadProjectDetails(projectFile, "Debug");
+
+					throw new InvalidOperationException(
+						$"The project(s) {metadataLessProjects.Select(p => p.Name).JoinBy(",")} did not provide any metadata reference. " +
+						"This may be due to an invalid path, such as $(SolutionDir) being used in the csproj; try using relative paths instead." +
+						"This may also be related to a missing default configuration directive. Refer to the Uno.SourceGenerator Readme.md file for more details."
+					);
+				}
+
+				project = RegisterGenericHelperTypes(project);
+
+				return await project.GetCompilationAsync();
 			}
 
-			var metadataLessProjects = ws
-				.CurrentSolution
-				.Projects
-				.Where(p => p.MetadataReferences.None())
-				.ToArray();
-
-			if (metadataLessProjects.Any())
-			{
-				// In this case, this may mean that Rolsyn failed to execute some msbuild task that loads the
-				// references in a UWA project (or NuGet 3.0+ with project.json, more specifically). For these
-				// projects, references are materialized through a task using a output parameter that injects 
-				// "References" nodes. If this task fails, no references are loaded, and simple type resolution
-				// such "int?" may fail.
-
-				// Additionally, it may happen that projects are loaded using the callee's Configuration/Platform, which
-				// may not exist in all projects. This can happen if the project does not have a proper
-				// fallback mecanism in place.
-
-				SourceGeneration.Host.ProjectLoader.LoadProjectDetails(projectFile, "Debug");
-
-				throw new InvalidOperationException(
-					$"The project(s) {metadataLessProjects.Select(p => p.Name).JoinBy(",")} did not provide any metadata reference. " +
-					"This may be due to an invalid path, such as $(SolutionDir) being used in the csproj; try using relative paths instead." +
-					"This may also be related to a missing default configuration directive. Refer to the Uno.SourceGenerator Readme.md file for more details."
-				);
-			}
-
-			project = RegisterGenericHelperTypes(project);
-
-			return project
-					.GetCompilationAsync().Result;
 		}
 
 		private static Microsoft.CodeAnalysis.Project RegisterGenericHelperTypes(Microsoft.CodeAnalysis.Project project)

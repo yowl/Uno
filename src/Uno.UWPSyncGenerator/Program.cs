@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -15,7 +16,7 @@ namespace Uno.UWPSyncGenerator
 		const string DocMode = "doc";
 		const string AllMode = "all";
 
-		static void Main(string[] args)
+		static async Task Main(string[] args)
 		{
 			if (args.Length == 0)
 			{
@@ -24,6 +25,7 @@ namespace Uno.UWPSyncGenerator
 			}
 
 			var mode = args[0].ToLowerInvariant();
+			var tasks = new List<Task>();
 
 			if (mode == SyncMode || mode == AllMode)
 			{
@@ -31,16 +33,18 @@ namespace Uno.UWPSyncGenerator
 				Console.WriteLine("Press any key to continue...");
 				Console.ReadLine();
 
-				new SyncGenerator().Build(@"..\..\..\..\Uno.Foundation", "Uno.Foundation", "Windows.Foundation.FoundationContract");
-				new SyncGenerator().Build(@"..\..\..\..\Uno.UWP", "Uno", "Windows.Foundation.UniversalApiContract");
-				new SyncGenerator().Build(@"..\..\..\..\Uno.UWP", "Uno", "Windows.Phone.PhoneContract");
-				new SyncGenerator().Build(@"..\..\..\..\Uno.UI", "Uno.UI", "Windows.Foundation.UniversalApiContract");
+				tasks.Add(new SyncGenerator().Build(@"..\..\..\..\Uno.Foundation", "Uno.Foundation", "Windows.Foundation.FoundationContract"));
+				tasks.Add(new SyncGenerator().Build(@"..\..\..\..\Uno.UWP", "Uno", "Windows.Foundation.UniversalApiContract"));
+				tasks.Add(new SyncGenerator().Build(@"..\..\..\..\Uno.UWP", "Uno", "Windows.Phone.PhoneContract"));
+				tasks.Add(new SyncGenerator().Build(@"..\..\..\..\Uno.UI", "Uno.UI", "Windows.Foundation.UniversalApiContract"));
 			}
 
 			if (mode == DocMode || mode == AllMode)
 			{
-				new DocGenerator().Build(@"..\..\..\..\Uno.UI", "Uno.UI", "Windows.Foundation.UniversalApiContract");
+				tasks.Add(new DocGenerator().Build(@"..\..\..\..\Uno.UI", "Uno.UI", "Windows.Foundation.UniversalApiContract"));
 			}
+
+			await Task.WhenAll(tasks);
 		}
 	}
 }

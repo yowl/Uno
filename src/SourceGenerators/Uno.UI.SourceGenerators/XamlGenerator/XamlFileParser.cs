@@ -31,6 +31,7 @@ namespace Uno.UI.SourceGenerators.XamlGenerator
 
 			return xamlSourceFiles
 				.AsParallel()
+				.WithDegreeOfParallelism(Environment.ProcessorCount/2 + Environment.ProcessorCount / 4)
 				.Select(ParseFile)
 				.Trim()
                 .OrderBy(f => f.UniqueID)

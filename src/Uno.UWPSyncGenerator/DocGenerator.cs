@@ -23,7 +23,7 @@ namespace Uno.UWPSyncGenerator
 		private IGrouping<INamespaceSymbol, PlatformSymbols<INamedTypeSymbol>>[] _viewsGrouped;
 		private HashSet<(string name, string namespaceString)> _kosherFrameworkViews;
 
-		public override void Build(string basePath, string baseName, string sourceAssembly)
+		public override async Task Build(string basePath, string baseName, string sourceAssembly)
 		{
 			_sb = new MarkdownStringBuilder();
 
@@ -31,7 +31,7 @@ namespace Uno.UWPSyncGenerator
 			_sb.AppendLine();
 
 			_views = new List<PlatformSymbols<INamedTypeSymbol>>();
-			base.Build(basePath, baseName, sourceAssembly);
+			await base.Build(basePath, baseName, sourceAssembly);
 
 			_viewsGrouped = GroupByNamespace(_views);
 			_kosherFrameworkViews = new HashSet<(string name, string namespaceString)>(_views.Select(ps => (ps.UAPSymbol.Name, ps.UAPSymbol.ContainingNamespace.ToDisplayString())));
