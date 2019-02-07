@@ -44,7 +44,7 @@ _If you need to set source programmatically (ie, using `_mediaPlayerElement.Sour
 |						| Change playback rate									| -     | -  		|												|
 |						| Player controls on locked screen support  			| -     | -  		|												|
 |						| Playlists support		  								| -     | -  		|												|
-|						| Subtitles	support			  							| X     | -  		|												|
+|						| Subtitles	support			  							| X     | -  		| Embedded subtitles only						|
 |						| Languages	support			  							| X     | -  		|												|
 
 ## Requirement
@@ -80,9 +80,8 @@ Add the folowwing to your AndroidManifest.xml
 
 - Playback rate support
 - React to audio focus changes (pause/stop playback or reduce audio volume)
-- Subtitles support
-- Languages support	
 - Display poster for audio media
+- External subtitles support (SRT, WebVTT)
 
 ## Known issues
 

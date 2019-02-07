@@ -210,7 +210,7 @@ namespace Windows.Media.Playback
 			}
 		}
 		#endif
-		#if false || false || NET46 ||  || __MACOS__
+		#if false || false || NET46 || __WASM__ || __MACOS__
 		[global::Uno.NotImplemented]
 		public  event global::Windows.Foundation.TypedEventHandler<global::Windows.Media.Playback.MediaPlaybackItem, global::Windows.Foundation.Collections.IVectorChangedEventArgs> TimedMetadataTracksChanged
 		{

@@ -42,24 +42,29 @@ namespace Windows.UI.Xaml.Controls
 		{
 			_subscriptions.Disposable = null;
 
-			_selectAudioTrackCommand = new DelegateCommand<AudioTrack>(SelectAudioTrack);
-			_selectSubtitleTrackCommand = new DelegateCommand<TimedMetadataTrack>(SelectSubtitleTrack);
+			if (_mediaPlayer != null)
+			{
+				_selectAudioTrackCommand = new DelegateCommand<AudioTrack>(SelectAudioTrack);
+				_selectSubtitleTrackCommand = new DelegateCommand<TimedMetadataTrack>(SelectSubtitleTrack);
 
-			_mediaPlayer.PlaybackSession.PlaybackStateChanged += OnPlaybackStateChanged;
-			_mediaPlayer.PlaybackSession.BufferingProgressChanged += OnBufferingProgressChanged;
-			_mediaPlayer.PlaybackSession.NaturalDurationChanged += OnNaturalDurationChanged;
-			_mediaPlayer.PlaybackSession.PositionChanged += OnPositionChanged;
-			_mediaPlayer.SourceChanged += OnSourceChanged;
+				_mediaPlayer.PlaybackSession.PlaybackStateChanged += OnPlaybackStateChanged;
+				_mediaPlayer.PlaybackSession.BufferingProgressChanged += OnBufferingProgressChanged;
+				_mediaPlayer.PlaybackSession.NaturalDurationChanged += OnNaturalDurationChanged;
+				_mediaPlayer.PlaybackSession.PositionChanged += OnPositionChanged;
+				_mediaPlayer.SourceChanged += OnSourceChanged;
 
-			_playPauseButton.Maybe(p => p.Click += PlayPause);
-			_playPauseButtonOnLeft.Maybe(p => p.Click += PlayPause);
-			_audioMuteButton.Maybe(p => p.Click += ToggleMute);
-			_volumeSlider.Maybe(p => p.ValueChanged += OnVolumeChanged);
-			_stopButton.Maybe(p => p.Click += Stop);
-			_skipForwardButton.Maybe(p => p.Click += SkipForward);
-			_skipBackwardButton.Maybe(p => p.Click += SkipBackward);
+				_playPauseButton.Maybe(p => p.Click += PlayPause);
+				_playPauseButtonOnLeft.Maybe(p => p.Click += PlayPause);
+				_audioMuteButton.Maybe(p => p.Click += ToggleMute);
+				_volumeSlider.Maybe(p => p.ValueChanged += OnVolumeChanged);
+				_stopButton.Maybe(p => p.Click += Stop);
+				_skipForwardButton.Maybe(p => p.Click += SkipForward);
+				_skipBackwardButton.Maybe(p => p.Click += SkipBackward);
 
-			_subscriptions.Disposable = AttachThumbEventHandlers(_progressSlider);
+				_subscriptions.Disposable = AttachThumbEventHandlers(_progressSlider);
+
+				OnSourceChanged(_mediaPlayer, null);
+			}
 		}
 
 		private void OnSliderTemplateChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
@@ -84,6 +89,7 @@ namespace Windows.UI.Xaml.Controls
 					_mediaPlayer.PlaybackSession.BufferingProgressChanged -= OnBufferingProgressChanged;
 					_mediaPlayer.PlaybackSession.NaturalDurationChanged -= OnNaturalDurationChanged;
 					_mediaPlayer.PlaybackSession.PositionChanged -= OnPositionChanged;
+					_mediaPlayer.SourceChanged -= OnSourceChanged;
 				}
 
 				_playPauseButton.Maybe(p => p.Click -= PlayPause);
@@ -166,8 +172,11 @@ namespace Windows.UI.Xaml.Controls
 
 		private void OnSourceChanged(Windows.Media.Playback.MediaPlayer sender, object args)
 		{
-			UpdateAudioTracks();
-			UpdateSubtitleTracks();
+			if (_mediaPlayer?.InnerSource != null)
+			{
+				UpdateAudioTracks();
+				UpdateSubtitleTracks();
+			}
 		}
 
 		private void UpdateSubtitleTracks()
