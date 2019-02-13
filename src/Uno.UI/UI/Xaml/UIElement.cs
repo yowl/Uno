@@ -20,6 +20,8 @@ using Uno.UI.Media;
 
 #if __IOS__
 using UIKit;
+using Windows.UI.Xaml.Data;
+using Windows.UI.Xaml.Markup;
 #endif
 
 namespace Windows.UI.Xaml
@@ -234,6 +236,16 @@ namespace Windows.UI.Xaml
 		{
 			var dp = DependencyProperty.GetProperty(owner.GetType(), dependencyPropertyName);
 			return dp == null ? null : owner.GetValue(dp);
+		}
+
+		internal static void SetDependencyPropertyValueInternal(DependencyObject owner, string dependencyPropertyName, string value)
+		{
+			var dp = DependencyProperty.GetProperty(owner.GetType(), dependencyPropertyName);
+
+			if (dp != null)
+			{
+				owner.SetValue(dp, XamlBindingHelper.ConvertValue(dp.Type, value));
+			}
 		}
 
 #if !__WASM__

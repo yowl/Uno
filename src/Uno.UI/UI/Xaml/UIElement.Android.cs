@@ -159,6 +159,7 @@ namespace Windows.UI.Xaml
 		/// </summary>
 		/// <param name="dependencyPropertyName">The name of the target dependency property</param>
 		/// <returns>The content of the target dependency property (its actual value if it is a primitive type ot its <see cref="object.ToString"/> representation otherwise</returns>
+		/// <remarks>The primary use of this method is for UI Testing purposes.</remarks>
 		[Java.Interop.Export(nameof(GetDependencyPropertyValue))]
 		public Java.Lang.Object GetDependencyPropertyValue(string dependencyPropertyName)
 		{
@@ -215,6 +216,16 @@ namespace Windows.UI.Xaml
 			// If all else fails, just return the string representation of the DP's value
 			return new Java.Lang.String(dpValue.ToString());
 		}
+
+		/// <summary>
+		/// Provides a native value for the dependency property with the given name on the current instance. If the value is a primitive type, 
+		/// its native representation is returned. Otherwise, the <see cref="object.ToString"/> implementation is used/returned instead.
+		/// </summary>
+		/// <param name="dependencyPropertyName">The name of the target dependency property</param>
+		/// <remarks>The primary use of this method is for UI Testing purposes.</remarks>
+		[Java.Interop.Export(nameof(SetDependencyPropertyValue))]
+		public void SetDependencyPropertyValue(string dependencyPropertyName, string value)
+			=> SetDependencyPropertyValueInternal(this, dependencyPropertyName, value);
 
 #if DEBUG
 		public static Predicate<View> ViewOfInterestSelector { get; set; } = v => (v as FrameworkElement)?.Name == "TargetView";
