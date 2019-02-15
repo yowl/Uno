@@ -180,13 +180,10 @@ namespace Windows.UI.Xaml.Controls
 				{
 					_modifyingSelectionInternally = true;
 
+					SelectedItems.Clear();
 					if (selectedItem != null)
 					{
-						SelectedItems.Update(new[] { selectedItem });
-					}
-					else
-					{
-						SelectedItems.Clear();
+						SelectedItems.Add(selectedItem);
 					}
 				}
 				finally
