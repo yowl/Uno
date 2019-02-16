@@ -56,6 +56,15 @@ var Windows;
                     }
                     else {
                         window.setImmediate(() => CoreDispatcher._coreDispatcherCallback());
+                        window.setImmediate(() => {
+                            try {
+                                CoreDispatcher._coreDispatcherCallback();
+                            }
+                            catch (e) {
+                                console.error(`Unhandled dispatcher exception: ${e} (${e.stack})`);
+                                throw e;
+                            }
+                        });
                     }
                     return true;
                 }
@@ -379,7 +388,7 @@ var Uno;
                 }
                 else {
                     const queryIndex = document.location.search.indexOf('?');
-                    if (queryIndex != -1) {
+                    if (queryIndex !== -1) {
                         return document.location.search.substring(queryIndex + 1);
                     }
                     return "";
@@ -429,7 +438,7 @@ var Uno;
                     element["tabindex"] = contentDefinition.isFocusable ? 0 : -1;
                 }
                 else {
-                    element.setAttribute("tabindex", contentDefinition.isFocusable ? '0' : '-1');
+                    element.setAttribute("tabindex", contentDefinition.isFocusable ? "0" : "-1");
                 }
                 if (contentDefinition) {
                     for (const className of contentDefinition.classes) {
@@ -576,14 +585,29 @@ var Uno;
                 if (!htmlElement) {
                     throw `Element id ${params.HtmlId} not found.`;
                 }
+                const elementStyle = htmlElement.style;
+                const pairs = params.Pairs;
                 for (let i = 0; i < params.Pairs_Length; i += 2) {
-                    const key = params.Pairs[i];
-                    const value = params.Pairs[i + 1];
-                    htmlElement.style.setProperty(key, value);
+                    const key = pairs[i];
+                    const value = pairs[i + 1];
+                    elementStyle.setProperty(key, value);
                 }
                 if (params.SetAsArranged) {
                     htmlElement.classList.remove(WindowManager.unoUnarrangedClassName);
                 }
+                return true;
+            }
+            /**
+            * Set a single CSS style of a html element
+            *
+            */
+            setStyleDoubleNative(pParams) {
+                const params = WindowManagerSetStyleDoubleParams.unmarshal(pParams);
+                const htmlElement = this.allActiveElementsById[params.HtmlId];
+                if (!htmlElement) {
+                    throw `Element id ${params.HtmlId} not found.`;
+                }
+                htmlElement.style.setProperty(params.Name, String(params.Value));
                 return true;
             }
             /**
@@ -615,6 +639,46 @@ var Uno;
                 for (const name of names) {
                     htmlElement.style.setProperty(name, "");
                 }
+            }
+            /**
+            * Arrange and clips a native elements
+            *
+            */
+            arrangeElementNative(pParams) {
+                const params = WindowManagerArrangeElementParams.unmarshal(pParams);
+                const htmlElement = this.allActiveElementsById[params.HtmlId];
+                if (!htmlElement) {
+                    throw `Element id ${params.HtmlId} not found.`;
+                }
+                var style = htmlElement.style;
+                style.position = "absolute";
+                style.top = params.Top + "px";
+                style.left = params.Left + "px";
+                style.width = params.Width == NaN ? "auto" : params.Width + "px";
+                style.height = params.Height == NaN ? "auto" : params.Height + "px";
+                if (params.Clip) {
+                    style.clip = `rect(${params.ClipTop}px, ${params.ClipRight}px, ${params.ClipBottom}px, ${params.ClipLeft}px)`;
+                }
+                else {
+                    style.clip = "";
+                }
+                htmlElement.classList.remove(WindowManager.unoUnarrangedClassName);
+                return true;
+            }
+            /**
+            * Arrange and clips a native elements
+            *
+            */
+            setElementTransformNative(pParams) {
+                const params = WindowManagerSetElementTransformParams.unmarshal(pParams);
+                const htmlElement = this.allActiveElementsById[params.HtmlId];
+                if (!htmlElement) {
+                    throw `Element id ${params.HtmlId} not found.`;
+                }
+                var style = htmlElement.style;
+                style.transform = `matrix(${params.M11},${params.M12},${params.M21},${params.M22},${params.M31},${params.M32})`;
+                htmlElement.classList.remove(WindowManager.unoUnarrangedClassName);
+                return true;
             }
             /**
                 * Load the specified URL into a new tab or window
@@ -653,7 +717,7 @@ var Uno;
                 * Add an event handler to a html element.
                 *
                 * @param eventName The name of the event
-                * @param onCapturePhase true means "on trickle down", false means "on bubble up". Default is false.
+                * @param onCapturePhase true means "on trickle down" (going down to target), false means "on bubble up" (bubbling back to ancestors). Default is false.
                 */
             registerEventOnView(elementId, eventName, onCapturePhase = false, eventFilterName, eventExtractorName) {
                 this.registerEventOnViewInternal(elementId, eventName, onCapturePhase, eventFilterName, eventExtractorName);
@@ -705,7 +769,31 @@ var Uno;
              * @param evt
              */
             leftPointerEventFilter(evt) {
-                return evt ? (!evt.button || evt.button == 0) : false;
+                return evt ? evt.eventPhase === 2 || evt.eventPhase === 3 && (!evt.button || evt.button === 0) : false;
+            }
+            /**
+             * default event filter to be used with registerEventOnView to
+             * use for most routed events
+             * @param evt
+             */
+            defaultEventFilter(evt) {
+                return evt ? evt.eventPhase === 2 || evt.eventPhase === 3 : false;
+            }
+            /**
+             * Gets the event filter function. See UIElement.HtmlEventFilter
+             * @param eventFilterName an event filter name.
+             */
+            getEventFilter(eventFilterName) {
+                if (eventFilterName) {
+                    switch (eventFilterName) {
+                        case "LeftPointerEventFilter":
+                            return this.leftPointerEventFilter;
+                        case "Default":
+                            return this.defaultEventFilter;
+                    }
+                    throw `Event filter ${eventFilterName} is not supported`;
+                }
+                return null;
             }
             /**
              * pointer event extractor to be used with registerEventOnView
@@ -724,18 +812,13 @@ var Uno;
                 return (evt instanceof KeyboardEvent) ? evt.key : "0";
             }
             /**
-             * Gets the event filter function. See UIElement.HtmlEventFilter
-             * @param eventFilterName an event filter name.
+             * tapped (mouse clicked / double clicked) event extractor to be used with registerEventOnView
+             * @param evt
              */
-            getEventFilter(eventFilterName) {
-                if (eventFilterName) {
-                    switch (eventFilterName) {
-                        case "LeftPointerEventFilter":
-                            return this.leftPointerEventFilter;
-                    }
-                    throw `Event filter ${eventFilterName} is not supported`;
-                }
-                return null;
+            tappedEventExtractor(evt) {
+                return evt
+                    ? `0;${evt.clientX};${evt.clientY};${(evt.ctrlKey ? "1" : "0")};${(evt.shiftKey ? "1" : "0")};${evt.button};mouse`
+                    : "";
             }
             /**
              * Gets the event extractor function. See UIElement.HtmlEventExtractor
@@ -748,6 +831,8 @@ var Uno;
                             return this.pointerEventExtractor;
                         case "KeyboardEventExtractor":
                             return this.keyboardEventExtractor;
+                        case "TappedEventExtractor":
+                            return this.tappedEventExtractor;
                     }
                     throw `Event filter ${eventExtractorName} is not supported`;
                 }
@@ -980,7 +1065,7 @@ var Uno;
                     }
                     element.style.width = "";
                     element.style.height = "";
-                    // This is required for an unconstrained measure (otherwise the parents size is taken into accound)
+                    // This is required for an unconstrained measure (otherwise the parents size is taken into account)
                     element.style.position = "fixed";
                     element.style.maxWidth = Number.isFinite(maxWidth) ? `${maxWidth}px` : "";
                     element.style.maxHeight = Number.isFinite(maxHeight) ? `${maxHeight}px` : "";
@@ -1163,7 +1248,7 @@ var Uno;
                 }
                 // UWP Window's default background is white.
                 const body = document.getElementsByTagName("body")[0];
-                body.style.backgroundColor = '#fff';
+                body.style.backgroundColor = "#fff";
             }
             resize() {
                 if (WindowManager.isHosted) {
@@ -1207,8 +1292,8 @@ var Uno;
             UI.HtmlDom.initPolyfills();
         })();
         UI.WindowManager = WindowManager;
-        if (typeof define === 'function') {
-            define(['AppManifest'], () => {
+        if (typeof define === "function") {
+            define(["AppManifest"], () => {
                 if (document.readyState === "loading") {
                     document.addEventListener("DOMContentLoaded", () => WindowManager.setupSplashScreen());
                 }
@@ -1236,6 +1321,43 @@ class WindowManagerAddViewParams {
         }
         {
             ret.Index = Number(Module.getValue(pData + 8, "i32"));
+        }
+        return ret;
+    }
+}
+/* TSBindingsGenerator Generated code -- this code is regenerated on each build */
+class WindowManagerArrangeElementParams {
+    static unmarshal(pData) {
+        let ret = new WindowManagerArrangeElementParams();
+        {
+            ret.Top = Number(Module.getValue(pData + 0, "double"));
+        }
+        {
+            ret.Left = Number(Module.getValue(pData + 8, "double"));
+        }
+        {
+            ret.Width = Number(Module.getValue(pData + 16, "double"));
+        }
+        {
+            ret.Height = Number(Module.getValue(pData + 24, "double"));
+        }
+        {
+            ret.ClipTop = Number(Module.getValue(pData + 32, "double"));
+        }
+        {
+            ret.ClipLeft = Number(Module.getValue(pData + 40, "double"));
+        }
+        {
+            ret.ClipBottom = Number(Module.getValue(pData + 48, "double"));
+        }
+        {
+            ret.ClipRight = Number(Module.getValue(pData + 56, "double"));
+        }
+        {
+            ret.HtmlId = Number(Module.getValue(pData + 64, "*"));
+        }
+        {
+            ret.Clip = Boolean(Module.getValue(pData + 68, "i32"));
         }
         return ret;
     }
@@ -1510,6 +1632,34 @@ class WindowManagerSetContentHtmlParams {
     }
 }
 /* TSBindingsGenerator Generated code -- this code is regenerated on each build */
+class WindowManagerSetElementTransformParams {
+    static unmarshal(pData) {
+        let ret = new WindowManagerSetElementTransformParams();
+        {
+            ret.M11 = Number(Module.getValue(pData + 0, "double"));
+        }
+        {
+            ret.M12 = Number(Module.getValue(pData + 8, "double"));
+        }
+        {
+            ret.M21 = Number(Module.getValue(pData + 16, "double"));
+        }
+        {
+            ret.M22 = Number(Module.getValue(pData + 24, "double"));
+        }
+        {
+            ret.M31 = Number(Module.getValue(pData + 32, "double"));
+        }
+        {
+            ret.M32 = Number(Module.getValue(pData + 40, "double"));
+        }
+        {
+            ret.HtmlId = Number(Module.getValue(pData + 48, "*"));
+        }
+        return ret;
+    }
+}
+/* TSBindingsGenerator Generated code -- this code is regenerated on each build */
 class WindowManagerSetNameParams {
     static unmarshal(pData) {
         let ret = new WindowManagerSetNameParams();
@@ -1555,6 +1705,28 @@ class WindowManagerSetPropertyParams {
             else {
                 ret.Pairs = null;
             }
+        }
+        return ret;
+    }
+}
+/* TSBindingsGenerator Generated code -- this code is regenerated on each build */
+class WindowManagerSetStyleDoubleParams {
+    static unmarshal(pData) {
+        let ret = new WindowManagerSetStyleDoubleParams();
+        {
+            ret.HtmlId = Number(Module.getValue(pData + 0, "*"));
+        }
+        {
+            var ptr = Module.getValue(pData + 4, "*");
+            if (ptr !== 0) {
+                ret.Name = String(Module.UTF8ToString(ptr));
+            }
+            else {
+                ret.Name = null;
+            }
+        }
+        {
+            ret.Value = Number(Module.getValue(pData + 8, "double"));
         }
         return ret;
     }

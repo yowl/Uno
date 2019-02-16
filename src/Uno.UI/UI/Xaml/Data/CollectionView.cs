@@ -244,7 +244,16 @@ namespace Windows.UI.Xaml.Data
 
 		void ICollection<object>.CopyTo(object[] array, int arrayIndex)
 		{
-			throw new NotSupportedException();
+			if(_collection is ICollection<object> list)
+			{
+				list.CopyTo(array, arrayIndex);
+			}
+			else if (_collection is ICollection collection)
+			{
+				collection.CopyTo(array, arrayIndex);
+			}
+
+			_collection?.ToObjectArray().CopyTo(array, arrayIndex);
 		}
 
 		IEnumerator<object> IEnumerable<object>.GetEnumerator()

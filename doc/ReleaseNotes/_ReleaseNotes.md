@@ -63,10 +63,13 @@
 * Add support for Flyout anchor
 * Improved XAML designer support
 * Improved DependencyObject performance under AOT (JS dynCalls for overrides/delegates inside of EH blocks)
+* Add support for `ICollectionView.CopyTo`
 * Add support for MatrixTransform, UIElement.TransformToVisual now returns a MatrixTransform
 * Add support for `ViewBox`
 * Add support for `AutoSuggestBox.ItemsSource`
 * Add support for `Selector.SelectedValuePath` (e.g. useful for ComboBox)
+* Add support for JS unhandled exception logging for CoreDispatcher (support for Mixed mode troubleshooting)
+* [WASM] Improve element arrange and transform performance
 
 ### Breaking changes
 * Refactored ToggleSwitch Default Native XAML Styles. (cf. 'NativeDefaultToggleSwitch' styles in Generic.Native.xaml)
@@ -130,6 +133,14 @@
  * 144101 fixed `ListView` group headers messed up on item update
  * Transforms are now fully functionnal
  * #527 Fix for `Selector.SelectionChanged` is raised twice on updated selection
+ * [Wasm] Fixed ListView infinite loop when using custom containers
+ * [Wasm] Use Uno.UI Assembly for namespace type lookup in `XamlReader`
+ * [iOS] Add fail-safe on `FrameworkElement.WillMoveToSuperview` log to `Application.Current.UnhandledException`
+ * [Wasm] Fixed `System.UriConverter` is being linked out
+ * 145075 [Android] [Wasm] Android and Wasm don't match all specific UWP behaviors for the Image control.
+ * [Wasm] Don't fail if the dispatcher queue is empty
+ * 146648 [Android] fixed ListView grouped items corruption on scroll
+ * [Wasm] Fix `ListView` recycling when the `XamlParent` is not available for `AutoSuggestBox`
 
 ## Release 1.42
 
@@ -146,7 +157,8 @@
 * Add `BitmapIcon.ShowAsMonochrome` support
 * Add support for `Windows.Foundation.UniversalApiContract` in `IsApiContractPresent`
 * Add support for ContentProperty on UserControl
-* Add DelegateCommand<T>
+* Add `DelegateCommand<T>`
+* #131258 Added support for _RoutedEvents_. See [routed-events.md documentation](../articles/routed-events.md).
 * [WASM] #234 Support virtualization in ListView
 
 ### Breaking changes
