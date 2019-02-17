@@ -33,8 +33,10 @@ namespace Windows.UI.Xaml.Media
 			// The value is being animated by the platform itself.
 
 			if (snd is Transform transform
-				&& args.NewPrecedence != DependencyPropertyValuePrecedences.Animations
-				&& !args.BypassesPropagation)
+#if __ANDROID__ || __IOS__ || __MACOS__ // On WASM currently we supports only CPU bound animations, so we have to let the transform be updated on each frame
+				&& !transform.IsAnimating
+#endif
+				)
 			{
 				transform.MatrixCore = transform.ToMatrix(new Point(0, 0));
 				transform.NotifyChanged();
@@ -110,11 +112,7 @@ namespace Windows.UI.Xaml.Media
 			}
 			else
 			{
-				outPoint = new Point
-				(
-					(inPoint.X * matrix.M11) + (inPoint.Y * matrix.M21) + matrix.M31,
-					(inPoint.X * matrix.M12) + (inPoint.Y * matrix.M22) + matrix.M32
-				);
+				outPoint = matrix.Transform(inPoint);
 				return true;
 			}
 		}
@@ -122,7 +120,7 @@ namespace Windows.UI.Xaml.Media
 		/// <inheritdoc />
 		protected override Rect TransformBoundsCore(Rect rect)
 		{
-			return rect.Transform(MatrixCore);
+			return MatrixCore.Transform(rect);
 		}
 		#endregion
 	}

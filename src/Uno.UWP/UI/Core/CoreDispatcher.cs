@@ -284,7 +284,10 @@ namespace Windows.UI.Core
 			}
 			else
 			{
-				throw new InvalidOperationException("Dispatch queue is empty");
+				if (this.Log().IsEnabled(Microsoft.Extensions.Logging.LogLevel.Debug))
+				{
+					this.Log().Error("Dispatch queue is empty");
+				}
 			}
 		}
 

@@ -224,6 +224,11 @@ declare namespace Uno.UI {
         */
         setStyleNative(pParams: number): boolean;
         /**
+        * Set a single CSS style of a html element
+        *
+        */
+        setStyleDoubleNative(pParams: number): boolean;
+        /**
             * Set the CSS style of a html element.
             *
             * To remove a value, set it to empty string.
@@ -238,6 +243,16 @@ declare namespace Uno.UI {
             */
         resetStyleNative(pParams: number): boolean;
         private resetStyleInternal(elementId, names);
+        /**
+        * Arrange and clips a native elements
+        *
+        */
+        arrangeElementNative(pParams: number): boolean;
+        /**
+        * Arrange and clips a native elements
+        *
+        */
+        setElementTransformNative(pParams: number): boolean;
         /**
             * Load the specified URL into a new tab or window
             * @param url URL to load
@@ -262,7 +277,7 @@ declare namespace Uno.UI {
             * Add an event handler to a html element.
             *
             * @param eventName The name of the event
-            * @param onCapturePhase true means "on trickle down", false means "on bubble up". Default is false.
+            * @param onCapturePhase true means "on trickle down" (going down to target), false means "on bubble up" (bubbling back to ancestors). Default is false.
             */
         registerEventOnView(elementId: number, eventName: string, onCapturePhase?: boolean, eventFilterName?: string, eventExtractorName?: string): string;
         /**
@@ -285,6 +300,17 @@ declare namespace Uno.UI {
          */
         private leftPointerEventFilter(evt);
         /**
+         * default event filter to be used with registerEventOnView to
+         * use for most routed events
+         * @param evt
+         */
+        private defaultEventFilter(evt);
+        /**
+         * Gets the event filter function. See UIElement.HtmlEventFilter
+         * @param eventFilterName an event filter name.
+         */
+        private getEventFilter(eventFilterName);
+        /**
          * pointer event extractor to be used with registerEventOnView
          * @param evt
          */
@@ -295,10 +321,10 @@ declare namespace Uno.UI {
          */
         private keyboardEventExtractor(evt);
         /**
-         * Gets the event filter function. See UIElement.HtmlEventFilter
-         * @param eventFilterName an event filter name.
+         * tapped (mouse clicked / double clicked) event extractor to be used with registerEventOnView
+         * @param evt
          */
-        private getEventFilter(eventFilterName);
+        private tappedEventExtractor(evt);
         /**
          * Gets the event extractor function. See UIElement.HtmlEventExtractor
          * @param eventExtractorName an event extractor name.
@@ -419,6 +445,19 @@ declare class WindowManagerAddViewParams {
     Index: number;
     static unmarshal(pData: number): WindowManagerAddViewParams;
 }
+declare class WindowManagerArrangeElementParams {
+    Top: number;
+    Left: number;
+    Width: number;
+    Height: number;
+    ClipTop: number;
+    ClipLeft: number;
+    ClipBottom: number;
+    ClipRight: number;
+    HtmlId: number;
+    Clip: boolean;
+    static unmarshal(pData: number): WindowManagerArrangeElementParams;
+}
 declare class WindowManagerCreateContentParams {
     HtmlId: number;
     TagName: string;
@@ -493,6 +532,16 @@ declare class WindowManagerSetContentHtmlParams {
     Html: string;
     static unmarshal(pData: number): WindowManagerSetContentHtmlParams;
 }
+declare class WindowManagerSetElementTransformParams {
+    M11: number;
+    M12: number;
+    M21: number;
+    M22: number;
+    M31: number;
+    M32: number;
+    HtmlId: number;
+    static unmarshal(pData: number): WindowManagerSetElementTransformParams;
+}
 declare class WindowManagerSetNameParams {
     HtmlId: number;
     Name: string;
@@ -503,6 +552,12 @@ declare class WindowManagerSetPropertyParams {
     Pairs_Length: number;
     Pairs: Array<string>;
     static unmarshal(pData: number): WindowManagerSetPropertyParams;
+}
+declare class WindowManagerSetStyleDoubleParams {
+    HtmlId: number;
+    Name: string;
+    Value: number;
+    static unmarshal(pData: number): WindowManagerSetStyleDoubleParams;
 }
 declare class WindowManagerSetStylesParams {
     HtmlId: number;
