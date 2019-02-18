@@ -167,8 +167,6 @@ namespace Uno.UI.SourceGenerators.XamlGenerator
 						).GenerateFile()));
 
 			return fileGens.ToDictionary(f => f.Item1, f => f.Item2);
-			 
-
 		}
 
 		private XamlGlobalStaticResourcesMap BuildAssemblyGlobalStaticResourcesMap(IEnumerable<XamlFileDefinition> files)
