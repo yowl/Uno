@@ -145,16 +145,10 @@ namespace Uno.UI.SourceGenerators.XamlGenerator
 			var lastBinaryUpdateTime = _forceGeneration ? DateTime.MaxValue : GetLastBinaryUpdateTime();
 
 			var globalStaticResourcesMap = BuildAssemblyGlobalStaticResourcesMap(files);
-
-			var filesQuery = files
-				.ToArray();
-
-			return filesQuery
-#if !DEBUG
-				.AsParallel()
-#endif
-				.ToDictionary(file => file.UniqueID, file =>
-						new XamlFileGenerator(
+			
+			var fileGens = files.AsParallel().WithDegreeOfParallelism(Environment.ProcessorCount).Select(file =>
+			    new Tuple<string, string>(file.UniqueID,
+				new XamlFileGenerator(
 							file: file,
 							targetPath: _targetPath,
 							defaultNamespace: _defaultNamespace,
@@ -170,7 +164,10 @@ namespace Uno.UI.SourceGenerators.XamlGenerator
 							defaultLanguage: _defaultLanguage,
 							isWasm: _isWasm,
 							isDebug: _isDebug
-						).GenerateFile());
+						).GenerateFile()));
+
+			return fileGens.ToDictionary(f => f.Item1, f => f.Item2);
+			 
 
 		}
 
@@ -219,35 +216,40 @@ namespace Uno.UI.SourceGenerators.XamlGenerator
 		{
 			foreach (var file in files)
 			{
-				var topLevelControl = file.Objects.FirstOrDefault();
+				BuildLocalProjectResource(map, file);
+			}
+		}
 
-				if (topLevelControl?.Type.Name == "ResourceDictionary")
+		private void BuildLocalProjectResource(XamlGlobalStaticResourcesMap map, XamlFileDefinition file)
+		{
+			var topLevelControl = file.Objects.FirstOrDefault();
+
+			if (topLevelControl?.Type.Name == "ResourceDictionary")
+			{
+				var resources = new Dictionary<string, XamlObjectDefinition>();
+
+				BuildResourceMap(topLevelControl, map);
+
+				var themeResources = topLevelControl.Members.FirstOrDefault(m => m.Member.Name == "ThemeDictionaries");
+
+				if (themeResources != null)
 				{
-					var resources = new Dictionary<string, XamlObjectDefinition>();
+					// Theme resources are not supported for now, so we take the default key
+					// and consider everthing inside as a standard StaticResource.
 
-					BuildResourceMap(topLevelControl, map);
+					var defaultTheme = themeResources
+						.Objects
+						.FirstOrDefault(o => o
+							.Members
+							.Any(m =>
+								m.Member.Name == "Key"
+								&& m.Value.ToString() == "Default"
+							)
+						);
 
-					var themeResources = topLevelControl.Members.FirstOrDefault(m => m.Member.Name == "ThemeDictionaries");
-
-					if (themeResources != null)
+					if (defaultTheme != null)
 					{
-						// Theme resources are not supported for now, so we take the default key
-						// and consider everthing inside as a standard StaticResource.
-
-						var defaultTheme = themeResources
-							.Objects
-							.FirstOrDefault(o => o
-								.Members
-								.Any(m =>
-									m.Member.Name == "Key"
-									&& m.Value.ToString() == "Default"
-								)
-							);
-
-						if (defaultTheme != null)
-						{
-							BuildResourceMap(defaultTheme, map);
-						}
+						BuildResourceMap(defaultTheme, map);
 					}
 				}
 			}
@@ -429,26 +431,13 @@ namespace Uno.UI.SourceGenerators.XamlGenerator
 			var resourceKeys = GetResourceKeys();
 			var parser = new XamlFileParser(_excludeXamlNamespaces, _includeXamlNamespaces);
 			var files = parser.ParseFiles(_xamlSourceFiles);
-			var filesToProcess = Partitioner.Create(0, files.Length-1, 40);
+			var trees = Generate(files, resourceKeys);
 
-			Parallel.ForEach(filesToProcess, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount },
-			(range, loopState) =>
+			foreach (var tree in trees)
 			{
-				var xamlDefs = new List<XamlFileDefinition>();
-
-				for (int i = range.Item1; i < range.Item2; i++)
-				{
-					xamlDefs.Add(files[i]);
-				}
-
-				var trees = Generate(xamlDefs, resourceKeys);
-
-				foreach (var tree in trees)
-				{
-					_ctx.AddCompilationUnit(tree.Key, tree.Value);
-				}
-			});
-
+				_ctx.AddCompilationUnit(tree.Key, tree.Value);
+			}
+			
 			_ctx.AddCompilationUnit("GlobalStaticResources", GenerateGlobalResources(files));
 		}
 	}
