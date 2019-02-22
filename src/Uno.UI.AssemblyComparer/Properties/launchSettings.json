@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Uno.UI.AssemblyComparer": {
+      "commandName": "Project",
+      "commandLineArgs": "Uno.UI \"C:\\Users\\jerome.laban\\Downloads\\Uno.UI.1.43.0-PullRequest0621.917.nupkg\" diff.md"
+    }
+  }
+}
