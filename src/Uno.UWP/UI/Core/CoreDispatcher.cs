@@ -173,13 +173,12 @@ namespace Windows.UI.Core
 			{
 				throw new ArgumentException($"The priority {priority} is not supported");
 			}
-
-			var queue = GetQueue(priority);
-
+			
 			bool shouldEnqueue;
 
 			lock (_gate)
 			{
+				var queue = GetQueue(priority);
 				queue.Enqueue(operation);
 				shouldEnqueue = IncrementGlobalCount() == 1;
 			}
@@ -214,32 +213,32 @@ namespace Windows.UI.Core
 
 		private void DispatchItems()
 		{
-			UIAsyncOperation operation = null;
+			UIAsyncOperation op = null;
 			CoreDispatcherPriority operationPriority = CoreDispatcherPriority.Normal;
 
-			for (int i = 3; i >= 0; i--)
+			lock (_gate)
 			{
-				var queue = _queues[i];
-
-				lock (_gate)
+				for (int i = 3; i >= 0; i--)
 				{
+					var queue = _queues[i];
+					
 					if (queue.Count > 0)
 					{
-						operation = queue.Dequeue();
+						op = queue.Dequeue();
 						operationPriority = (CoreDispatcherPriority)(i - 2);
 
 						if (DecrementGlobalCount() > 0)
 						{
 							EnqueueNative();
-                        }
+						}
 						break;
 					}
 				}
 			}
-
-			if (operation != null)
+		
+			if (op != null)
 			{
-				if (!operation.IsCancelled)
+				if (!op.IsCancelled && !op.IsCompleted)
 				{
 					IDisposable runActivity = null;
 
@@ -250,8 +249,8 @@ namespace Windows.UI.Core
 							runActivity = _trace.WriteEventActivity(
 								TraceProvider.CoreDispatcher_InvokeStart, 
 								TraceProvider.CoreDispatcher_InvokeStop, 
-								relatedActivity: operation.ScheduleEventActivity,
-								payload: new[] { ((int)operationPriority).ToString(), operation.GetDiagnosticsName() }
+								relatedActivity: op.ScheduleEventActivity,
+								payload: new[] { ((int)operationPriority).ToString(), op.GetDiagnosticsName() }
 							);
 						}
 
@@ -259,8 +258,8 @@ namespace Windows.UI.Core
 						{
                             using (GetSyncContext(operationPriority).Apply())
                             {
-                                operation.Action();
-                                operation.Complete();
+                                op.Action();
+                                op.Complete();
                             }
 						}
 					}
@@ -268,9 +267,9 @@ namespace Windows.UI.Core
 					{
 						if (_trace.IsEnabled)
 						{
-							_trace.WriteEvent(TraceProvider.CoreDispatcher_Exception, EventOpcode.Send, new[] { ex.GetType().ToString(), operation.GetDiagnosticsName() });
+							_trace.WriteEvent(TraceProvider.CoreDispatcher_Exception, EventOpcode.Send, new[] { ex.GetType().ToString(), op.GetDiagnosticsName() });
 						}
-						operation.SetError(ex);
+						op.SetError(ex);
 						this.Log().Error("Dispatcher unhandled exception", ex);
 					}
 				}
@@ -278,7 +277,7 @@ namespace Windows.UI.Core
 				{
 					if (_trace.IsEnabled)
 					{
-						_trace.WriteEvent(TraceProvider.CoreDispatcher_Cancelled, EventOpcode.Send, new[] { operation.GetDiagnosticsName() });
+						_trace.WriteEvent(TraceProvider.CoreDispatcher_Cancelled, EventOpcode.Send, new[] { op.GetDiagnosticsName() });
 					}
 				}
 			}

@@ -1,13 +1,11 @@
-﻿using Uno.Diagnostics.Eventing;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Windows.Foundation;
-using System.Runtime.CompilerServices;
-using Uno.Threading;
 using Uno;
+using Uno.Diagnostics.Eventing;
+using Uno.Threading;
+using Windows.Foundation;
 
 namespace Windows.UI.Core
 {
@@ -16,6 +14,7 @@ namespace Windows.UI.Core
 		private FastTaskCompletionSource<object> _tcs;
 		private CancellationTokenSource _cts;
 		private AsyncActionCompletedHandler _completedHandler;
+		private bool _isCompleted;
 
 		/// <summary>
 		/// Creates a <see cref="UIAsyncOperation"/> using the provided handler.
@@ -41,7 +40,7 @@ namespace Windows.UI.Core
 		/// <returns>A task representing the current operation</returns>
 		public Task AsTask(CancellationToken ct)
 		{
-			ct.Register(() => Cancel());
+			ct.Register(() => { Cancel(); });
 
 			return CompletionSource.Task;
 		}
@@ -49,6 +48,7 @@ namespace Windows.UI.Core
 		public DispatchedHandler Action { get; }
 
 		public bool IsCancelled { get; private set; }
+		public bool IsCompleted { get => IsCancelled || _isCompleted; private set => _isCompleted = value; }
 
 		public EventActivity ScheduleEventActivity { get; }
 
@@ -88,22 +88,39 @@ namespace Windows.UI.Core
 		/// </summary>
 		internal void Complete()
 		{
-			CompletionSource?.TrySetResult(null);
-			_completedHandler?.Invoke(this, Status);
+			if (_tcs != null && !_tcs.IsCompleted)
+			{
+				CompletionSource?.TrySetResult(null);
+				IsCompleted = true;
+				_completedHandler?.Invoke(this, Status);
+			}
 		}
 
 		public void Cancel()
 		{
-			CompletionSource?.TrySetCanceled();
-			_cts?.Cancel();
-			IsCancelled = true;
-			_completedHandler?.Invoke(this, Status);
+			if (_tcs != null && !_tcs.IsCompleted)
+			{
+				CompletionSource?.TrySetCanceled();
+				IsCancelled = true;
+
+				_completedHandler?.Invoke(this, Status);
+			}
+
+			if (_cts != null && !_cts.IsCancellationRequested)
+			{
+				_cts.Cancel();
+				_cts = null;
+			}
 		}
 
 		internal void SetError(Exception ex)
 		{
-			CompletionSource?.TrySetException(ex);
-			_completedHandler?.Invoke(this, Status);
+			if (_tcs != null && !_tcs.IsCompleted)
+			{
+				CompletionSource?.TrySetException(ex);
+				IsCompleted = true;
+				_completedHandler?.Invoke(this, Status);
+			}
 		}
 
 		public void Dispose() => Cancel();
@@ -153,16 +170,16 @@ namespace Windows.UI.Core
 			}
 		}
 
-		void IAsyncAction.GetResults() 
+		void IAsyncAction.GetResults()
 			=> CompletionSource.Task.Wait();
 
-		void IAsyncInfo.Cancel() 
+		void IAsyncInfo.Cancel()
 			=> Cancel();
 
-		void IAsyncInfo.Close() 
+		void IAsyncInfo.Close()
 			=> Cancel();
 
-		internal string GetDiagnosticsName() 
+		internal string GetDiagnosticsName()
 			=> Action.Method.DeclaringType.FullName + "." + Action.Method.Name;
 	}
 }
