@@ -117,7 +117,7 @@ namespace Windows.UI.Xaml.Controls
 				_picker.SetDate(nsDate, animated: false);
 			}
 		}
-
+		 
 		partial void OnClockIdentifierChangedPartialNative(string oldClockIdentifier, string newClockIdentifier)
 		{
 			SetPickerClockIdentifier(newClockIdentifier);

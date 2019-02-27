@@ -327,6 +327,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <UpToDateCheckInput Remove="UI\Xaml\Controls\TimePicker\TimePickerFlyout.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<Analyzer Include="$(MSBuildThisFileDirectory)..\Uno.MonoAnalyzers\bin\$(Configuration)\net46\Uno.MonoAnalyzers.dll" />
 	</ItemGroup>
 

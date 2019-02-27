@@ -11,7 +11,8 @@ namespace Windows.UI.Xaml.Controls
 {
 	public class UnoTimePickerDialog : TimePickerDialog
 	{
-		private View _picker;
+		private Android.Widget.TimePicker _picker;
+		public bool IsInSpinnerMode { get; private set; }
 		private int _minuteIncrement = 1;
 		private int _hourOfDay;
 		private int _minute;
@@ -56,10 +57,10 @@ namespace Windows.UI.Xaml.Controls
 
 		public override void SetView(View view)
 		{
-			_picker = view;
+			_picker = (Android.Widget.TimePicker)view;
 			base.SetView(_picker);
 		}
-
+		
 		private void Initialize()
 		{
 			if (_minuteIncrement >= 1 && _minuteIncrement <= 30)
@@ -74,6 +75,8 @@ namespace Windows.UI.Xaml.Controls
 
 			if (minutePicker != null)
 			{
+				IsInSpinnerMode = true;
+
 				var values = new List<int>();
 
 				for (int i = 0; i < 60; i += _minuteIncrement)
@@ -85,6 +88,10 @@ namespace Windows.UI.Xaml.Controls
 				minutePicker.MinValue = 0;
 				minutePicker.MaxValue = values.Count - 1;
 				minutePicker.SetDisplayedValues(values.Select(num => num.ToString("00")).ToArray());
+			}
+			else
+			{
+				IsInSpinnerMode = false;
 			}
 		}
 
