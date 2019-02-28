@@ -26,7 +26,7 @@ namespace Windows.UI.Xaml
 
 		internal int SystemUiVisibility { get; set; }
 
-		private bool IsNavigationBarVisible => (SystemUiVisibility & (int)SystemUiFlags.HideNavigation) == 0;
+		public bool IsNavigationBarVisible => (SystemUiVisibility & (int)SystemUiFlags.HideNavigation) == 0;
 
 		private void InternalSetContent(UIElement value)
 		{

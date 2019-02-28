@@ -5,6 +5,7 @@ using Android.Graphics.Drawables;
 using Android.Util;
 using Android.Views;
 using Android.Widget;
+using Window = Windows.UI.Xaml.Window;
 
 namespace Uno.UI
 {
@@ -68,17 +69,26 @@ namespace Uno.UI
 		/// </summary>
 		void ViewTreeObserver.IOnGlobalLayoutListener.OnGlobalLayout()
 		{
+			MeasureRects();
+		}
+
+		public void MeasureRects()
+		{
+			var isNavigationBarVisible = Window.Current.IsNavigationBarVisible;
+
 			var realMetrics = Get<DisplayMetrics>(_activity.WindowManager.DefaultDisplay.GetRealMetrics);
 			var displayRect = Get<Rect>(_activity.WindowManager.DefaultDisplay.GetRectSize);
 			var usableRect = Get<Rect>(_popupView.GetWindowVisibleDisplayFrame);
 
-			// we assume that the keyboard and the navigation bar always occupy the bottom area, with the keyboard being above the navigation bar
-			// their placements can be calculated based on the follow observation:
-			// [size] realMetrics	: screen
-			// [rect] displayRect	: display area = screen - (bottom: nav_bar)
-			// [rect] usableRect	: usable area = screen - (top: status_bar) - (bottom: keyboard + nav_bar)
-			var navigationRect = new Rect(0, displayRect.Bottom, realMetrics.WidthPixels, realMetrics.HeightPixels);
-			var keyboardRect = new Rect(0, usableRect.Bottom, realMetrics.WidthPixels, navigationRect.Top);
+            var navigationRectTop = isNavigationBarVisible ? displayRect.Bottom : realMetrics.HeightPixels;
+
+            // we assume that the keyboard and the navigation bar always occupy the bottom area, with the keyboard being above the navigation bar
+            // their placements can be calculated based on the follow observation:
+            // [size] realMetrics	: screen
+            // [rect] displayRect	: display area = screen - (bottom: nav_bar)
+            // [rect] usableRect	: usable area = screen - (top: status_bar) - (bottom: keyboard + nav_bar)
+            var navigationRect = new Rect(0, navigationRectTop, realMetrics.WidthPixels, realMetrics.HeightPixels);
+			var keyboardRect = new Rect(0, usableRect.Bottom, realMetrics.WidthPixels, navigationRectTop);
 			var occupiedRect = new Rect(0, usableRect.Bottom, realMetrics.WidthPixels, realMetrics.HeightPixels);
 
 			_onLayoutChanged?.Invoke(keyboardRect, navigationRect, occupiedRect);
