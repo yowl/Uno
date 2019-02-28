@@ -1,11 +1,11 @@
 ﻿#if XAMARIN_ANDROID
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Android.App;
 using Android.Content;
 using Android.Views;
 using Android.Widget;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Windows.UI.Xaml.Controls
 {
@@ -60,7 +60,7 @@ namespace Windows.UI.Xaml.Controls
 			_picker = (Android.Widget.TimePicker)view;
 			base.SetView(_picker);
 		}
-		
+
 		private void Initialize()
 		{
 			if (_minuteIncrement >= 1 && _minuteIncrement <= 30)

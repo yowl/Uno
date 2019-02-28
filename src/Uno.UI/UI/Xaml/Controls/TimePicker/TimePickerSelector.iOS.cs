@@ -1,8 +1,8 @@
 ﻿#if XAMARIN_IOS
 
+using Foundation;
 using System;
 using System.Linq;
-using Foundation;
 using UIKit;
 using Uno.Extensions;
 using Uno.Logging;
@@ -117,7 +117,7 @@ namespace Windows.UI.Xaml.Controls
 				_picker.SetDate(nsDate, animated: false);
 			}
 		}
-		 
+
 		partial void OnClockIdentifierChangedPartialNative(string oldClockIdentifier, string newClockIdentifier)
 		{
 			SetPickerClockIdentifier(newClockIdentifier);

@@ -139,7 +139,7 @@ namespace Windows.UI.Xaml.Controls
 		}
 
 		partial void OnMinuteIncrementChanged(int oldTimeIncrement, int newTimeIncrement);
-	
+
 		private void UpdateDisplayedDate()
 		{
 			var dateTime = DateTime.Today.Add(Time);

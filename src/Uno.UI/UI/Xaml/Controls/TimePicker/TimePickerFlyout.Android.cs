@@ -1,7 +1,6 @@
 ﻿#if XAMARIN_ANDROID
-using System;
-using Android.App;
 using Android.OS;
+using System;
 using Uno.UI;
 using Uno.UI.Extensions;
 using Windows.Globalization;
@@ -48,10 +47,12 @@ namespace Windows.UI.Xaml.Controls
 			if (Time.Hours != hourOfDay || Time.Minutes != minutes)
 			{
 				if (_dialog.IsInSpinnerMode)
+				{
 					minutes = minutes * MinuteIncrement;
-				
+				}
+
 				var time = new TimeSpan(Time.Days, hourOfDay, minutes, Time.Seconds, Time.Milliseconds);
-                SaveTime(time.RoundToMinuteInterval(MinuteIncrement));
+				SaveTime(time.RoundToMinuteInterval(MinuteIncrement));
 			}
 		}
 
