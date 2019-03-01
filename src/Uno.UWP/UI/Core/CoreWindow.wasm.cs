@@ -10,10 +10,17 @@ namespace Windows.UI.Core
 	{
 		public global::Windows.UI.Core.CoreCursor PointerCursor { get; set; }
 
+		public static CoreWindow CurrentThreadCoreWindow { get; set; }
+
 		[global::Uno.NotImplemented]
 		public global::Windows.UI.Core.CoreVirtualKeyStates GetKeyState(global::Windows.System.VirtualKey virtualKey)
 		{
 			return CoreVirtualKeyStates.None;
+		}
+
+		public static global::Windows.UI.Core.CoreWindow GetForCurrentThread()
+		{
+			return CurrentThreadCoreWindow;
 		}
 	}
 }

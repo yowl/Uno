@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Windows.UI.Xaml.Markup;
 using Uno.UI.WpfHost;
 
 namespace SamplesApp.WPF
@@ -30,7 +31,10 @@ namespace SamplesApp.WPF
 #endif
 
 			UnoHostView.Init(() => SamplesApp.Wasm.Program.Main(new string[0]), $@"..\..\..\..\SamplesApp.Wasm\bin\{configuration}\netstandard2.0\dist");
-
+			var rd = XamlReader.Load(@"<ResourceDictionary xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation"" xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml"">
+<Style TargetType=""TextBlock"" x:Key=""DefaultColumnStyle"">
+        <Setter Property=""Margin"" Value=""8, 10, 8, 10""/>
+</Style> </ResourceDictionary> ");
 			InitializeComponent();
 		}
 	}

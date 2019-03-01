@@ -40,14 +40,14 @@ namespace Windows.UI.Xaml.Markup.Reader
 		{
 			var topLevelControl = _fileDefinition.Objects.First();
 
-			var instance = LoadObject(topLevelControl);
+			var instance = LoadObject(topLevelControl).Item1;
 
 			ApplyPostActions(instance);
 
 			return instance;
 		}
 
-		private object LoadObject(XamlObjectDefinition control)
+		private Tuple<object, IEnumerable<XamlMemberDefinition>> LoadObject(XamlObjectDefinition control)
 		{
 			if(
 				control.Type.Name == "NullExtension"
@@ -70,10 +70,25 @@ namespace Windows.UI.Xaml.Markup.Reader
 				{
 					var contentOwner = control.Members.FirstOrDefault(m => m.Member.Name == "_UnknownContent");
 
-					return LoadObject(contentOwner.Objects.FirstOrDefault()) as _View;
+					return LoadObject(contentOwner.Objects.FirstOrDefault()).Item1 as _View;
 				};
 
-				return Activator.CreateInstance(type, builder);
+				return new Tuple<object, IEnumerable<XamlMemberDefinition>>(Activator.CreateInstance(type, builder), control.Members.Where(m => m.Member.IsDirective));
+			}
+			if (type.Is<ResourceDictionary>())
+			{
+				var contentOwner = control.Members.FirstOrDefault(m => m.Member.Name == "_UnknownContent");
+				var rd = Activator.CreateInstance(type) as ResourceDictionary;
+				foreach (var xamlObjectDefinition in contentOwner.Objects)
+				{
+					var definitionTuple = LoadObject(xamlObjectDefinition);
+					var key = definitionTuple.Item2.FirstOrDefault(m => m.Member.Name == "Key");
+					if(key != null)
+					{
+						rd.Add(key.Value, definitionTuple.Item1);
+					}
+				}
+				return new Tuple<object, IEnumerable<XamlMemberDefinition>>(rd, control.Members.Where(m => m.Member.IsDirective));
 			}
 			else
 			{
@@ -116,7 +131,7 @@ namespace Windows.UI.Xaml.Markup.Reader
 					}
 				}
 
-				return instance;
+				return new Tuple<object, IEnumerable<XamlMemberDefinition>>(instance, control.Members.Where(m => m.Member.IsDirective));
 			}
 		}
 
@@ -267,7 +282,7 @@ namespace Windows.UI.Xaml.Markup.Reader
 			{
 				foreach (var node in member.Objects)
 				{
-					span.Inlines.Add((Documents.Inline)LoadObject(node));
+					span.Inlines.Add((Documents.Inline)LoadObject(node).Item1);
 				}
 			}
 
@@ -313,7 +328,7 @@ namespace Windows.UI.Xaml.Markup.Reader
 				{
 					foreach (var node in member.Objects)
 					{
-						instance.Inlines.Add((Documents.Inline)LoadObject(node));
+						instance.Inlines.Add((Documents.Inline)LoadObject(node).Item1);
 					}
 				}
 			}
@@ -347,7 +362,7 @@ namespace Windows.UI.Xaml.Markup.Reader
 			}
 			else
 			{
-				instance.SetValue(property, LoadObject(member.Objects.First()));
+				instance.SetValue(property, LoadObject(member.Objects.First()).Item1);
 			}
 		}
 
@@ -362,7 +377,7 @@ namespace Windows.UI.Xaml.Markup.Reader
 
 					foreach (var child in member.Objects)
 					{
-						var item = LoadObject(child);
+						var item = LoadObject(child).Item1;
 
 						var resourceKey = GetResourceKey(child);
 						var resourceTargetType = GetResourceTargetType(child);
@@ -401,7 +416,7 @@ namespace Windows.UI.Xaml.Markup.Reader
 			}
 			else
 			{
-				GetPropertySetter(propertyInfo).Invoke(instance, new[] { LoadObject(member.Objects.First()) });
+				GetPropertySetter(propertyInfo).Invoke(instance, new[] { LoadObject(member.Objects.First()).Item1 });
 			}
 		}
 
@@ -646,7 +661,7 @@ namespace Windows.UI.Xaml.Markup.Reader
 
 			foreach (var child in nonBindingObjects)
 			{
-				var item = LoadObject(child);
+				var item = LoadObject(child).Item1;
 
 				addMethod.Invoke(collectionInstance, new[] { item });
 			}

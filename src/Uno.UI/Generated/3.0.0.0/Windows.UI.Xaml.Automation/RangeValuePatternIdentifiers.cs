@@ -7,7 +7,9 @@ namespace Windows.UI.Xaml.Automation
 	#endif
 	public  partial class RangeValuePatternIdentifiers 
 	{
-		#if __ANDROID__ || __IOS__ || NET46 || __WASM__ || __MACOS__
+		static AutomationProperty valueProperty;
+
+#if __ANDROID__ || __IOS__ || NET46 || __WASM__ || __MACOS__
 		[global::Uno.NotImplemented]
 		public static global::Windows.UI.Xaml.Automation.AutomationProperty IsReadOnlyProperty
 		{
@@ -57,16 +59,14 @@ namespace Windows.UI.Xaml.Automation
 			}
 		}
 		#endif
-		#if __ANDROID__ || __IOS__ || NET46 || __WASM__ || __MACOS__
 		[global::Uno.NotImplemented]
 		public static global::Windows.UI.Xaml.Automation.AutomationProperty ValueProperty
 		{
 			get
 			{
-				throw new global::System.NotImplementedException("The member AutomationProperty RangeValuePatternIdentifiers.ValueProperty is not implemented in Uno.");
+				return valueProperty ?? ( valueProperty = new AutomationProperty());
 			}
 		}
-		#endif
 		// Forced skipping of method Windows.UI.Xaml.Automation.RangeValuePatternIdentifiers.IsReadOnlyProperty.get
 		// Forced skipping of method Windows.UI.Xaml.Automation.RangeValuePatternIdentifiers.LargeChangeProperty.get
 		// Forced skipping of method Windows.UI.Xaml.Automation.RangeValuePatternIdentifiers.MaximumProperty.get

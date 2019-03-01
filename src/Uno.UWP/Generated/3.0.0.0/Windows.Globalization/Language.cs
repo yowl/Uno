@@ -57,7 +57,7 @@ namespace Windows.Globalization
 			}
 		}
 		#endif
-		#if __ANDROID__ || __IOS__ || NET46 || __WASM__ || __MACOS__
+		#if __ANDROID__ || __IOS__ || NET46 || __MACOS__
 		[global::Uno.NotImplemented]
 		public static string CurrentInputMethodLanguageTag
 		{

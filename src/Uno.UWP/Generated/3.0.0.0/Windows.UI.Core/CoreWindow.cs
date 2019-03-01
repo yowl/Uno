@@ -234,7 +234,7 @@ namespace Windows.UI.Core
 		// Forced skipping of method Windows.UI.Core.CoreWindow.ResizeCompleted.remove
 		// Forced skipping of method Windows.UI.Core.CoreWindow.DispatcherQueue.get
 		// Forced skipping of method Windows.UI.Core.CoreWindow.ActivationMode.get
-		#if __ANDROID__ || __IOS__ || NET46 || __WASM__ || __MACOS__
+		#if __ANDROID__ || __IOS__ || NET46 || __MACOS__
 		[global::Uno.NotImplemented]
 		public static global::Windows.UI.Core.CoreWindow GetForCurrentThread()
 		{
