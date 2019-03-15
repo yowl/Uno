@@ -218,7 +218,7 @@ namespace Uno.UI.SourceGenerators.XamlGenerator
 			writer.AppendLineInvariant("using _View = AppKit.NSView;");
 			writer.AppendLineInvariant("#elif __WASM__");
 			writer.AppendLineInvariant("using _View = Windows.UI.Xaml.UIElement;");
-			writer.AppendLineInvariant("#elif NET46");
+			writer.AppendLineInvariant("#elif NET461");
 			writer.AppendLineInvariant("using _View = Windows.UI.Xaml.UIElement;");
 			writer.AppendLineInvariant("#endif");
 
@@ -369,9 +369,14 @@ namespace Uno.UI.SourceGenerators.XamlGenerator
 
 			writer.AppendLineInvariant($"global::Windows.ApplicationModel.Resources.ResourceLoader.AddLookupAssembly(GetType().Assembly);");
 
-			foreach(var asmPath in _medataHelper.Compilation.ExternalReferences.Select(r => r.Display))
+			foreach(var reference in _medataHelper.Compilation.ExternalReferences)
 			{
-				var asm = Mono.Cecil.AssemblyDefinition.ReadAssembly(asmPath);
+				if (!File.Exists(reference.Display))
+				{
+					throw new InvalidOperationException($"The reference {reference} could not be found in {reference.Display}");
+				}
+
+				var asm = Mono.Cecil.AssemblyDefinition.ReadAssembly(reference.Display);
 
 				if(asm.MainModule.HasResources && asm.MainModule.Resources.Any(r => r.Name.EndsWith("upri")))
 				{

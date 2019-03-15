@@ -923,6 +923,10 @@
 
 			parentElement.removeChild(childElement);
 
+			// Mark the element as unarranged, so if it gets measured while being
+			// disconnected from the root element, it won't be visible.
+			childElement.classList.add(WindowManager.unoUnarrangedClassName);
+
 			if (shouldRaiseLoadEvents) {
 				this.dispatchEvent(childElement, "unloaded");
 			}
@@ -959,8 +963,9 @@
 
 			if (element.parentElement) {
 				element.parentElement.removeChild(element);
-				delete this.allActiveElementsById[viewId];
 			}
+
+			delete this.allActiveElementsById[viewId];
 		}
 
 		public getBoundingClientRect(elementId: string): string {
@@ -1304,10 +1309,10 @@
 		private resize() {
 
 			if (WindowManager.isHosted) {
-				UnoDispatch.resize(`${window.innerWidth};${window.innerHeight}`);
+				UnoDispatch.resize(`${document.documentElement.clientWidth};${document.documentElement.clientHeight}`);
 			}
 			else {
-				WindowManager.resizeMethod(window.innerWidth, window.innerHeight);
+				WindowManager.resizeMethod(document.documentElement.clientWidth, document.documentElement.clientHeight);
 			}
 		}
 

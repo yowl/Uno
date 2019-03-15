@@ -1,7 +1,7 @@
 ﻿<Project Sdk="MSBuild.Sdk.Extras" ToolsVersion="15.0">
   <PropertyGroup>
-    <TargetFrameworks>xamarinmac20;xamarinios10;MonoAndroid80;net46;netstandard2.0</TargetFrameworks>
-		<TargetFrameworksCI>MonoAndroid71;MonoAndroid80;xamarinios10;net46;netstandard2.0;xamarinmac20</TargetFrameworksCI>
+    <TargetFrameworks>xamarinmac20;xamarinios10;MonoAndroid80;net461;netstandard2.0</TargetFrameworks>
+		<TargetFrameworksCI>MonoAndroid80;xamarinios10;net461;netstandard2.0;xamarinmac20</TargetFrameworksCI>
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -15,18 +15,9 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-    <PackageReference Include="Uno.SourceGenerationTasks">
-      <Version>1.29.0-dev.241</Version>
-      <ExcludeAssets>Runtime</ExcludeAssets>
-    </PackageReference>
-    <PackageReference Include="Uno.Core">
-      <Version>1.26.0-dev.58</Version>
-      <ExcludeAssets>Runtime</ExcludeAssets>
-    </PackageReference>
-	</ItemGroup>
-
-	<ItemGroup>
-		<Analyzer Include="$(MSBuildThisFileDirectory)..\Uno.MonoAnalyzers\bin\$(Configuration)\net46\Uno.MonoAnalyzers.dll" />
+    <PackageReference Include="Uno.SourceGenerationTasks" />
+    <PackageReference Include="Uno.Core" />
+		<PackageReference Include="Uno.MonoAnalyzers" />
 	</ItemGroup>
 	
 	<ItemGroup>
@@ -35,15 +26,6 @@
 
 	<ItemGroup Condition="'$(TargetFrameworkIdentifier)'=='.NETStandard'">
 		<PackageReference Include="System.Runtime.InteropServices.WindowsRuntime" Version="4.3.0" />
-	</ItemGroup>
-	
-	<ItemGroup>
-		<!-- Disable sub project loading during docs generation to avoid https://github.com/nventive/Uno.SourceGeneration/issues/2 -->
-		<ProjectReference Include="..\Uno.MonoAnalyzers\Uno.MonoAnalyzers.csproj" Condition="'$(DocsGeneration)'==''">
-			<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-			<SkipGetTargetFrameworkProperties>true</SkipGetTargetFrameworkProperties>
-			<UndefineProperties>TargetFramework</UndefineProperties>
-		</ProjectReference>
 	</ItemGroup>
 	
 	<Import Project="..\Uno.CrossTargetting.props" />

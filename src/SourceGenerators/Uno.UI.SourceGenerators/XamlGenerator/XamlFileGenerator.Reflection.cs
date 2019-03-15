@@ -33,6 +33,7 @@ namespace Uno.UI.SourceGenerators.XamlGenerator
 		private Func<INamedTypeSymbol, Dictionary<string, IEventSymbol>> _getEventsForType;
 		private (string ns, string className) _className;
 		private bool _hasLiteralEventsRegistration = false;
+		private string[] _clrNamespaces;
 		private readonly static Func<INamedTypeSymbol, IPropertySymbol> _findContentProperty;
 		private readonly static Func<INamedTypeSymbol, string, bool> _isAttachedProperty;
 
@@ -44,6 +45,14 @@ namespace Uno.UI.SourceGenerators.XamlGenerator
 			_findPropertyTypeByName = Funcs.Create<string, string, INamedTypeSymbol>(SourceFindPropertyType).AsLockedMemoized();
 			_findTypeByXamlType = Funcs.Create<XamlType, INamedTypeSymbol>(SourceFindTypeByXamlType).AsLockedMemoized();
 			_getEventsForType = Funcs.Create<INamedTypeSymbol, Dictionary<string, IEventSymbol>>(SourceGetEventsForType).AsLockedMemoized();
+
+			var defaultXmlNamespace = _fileDefinition
+				.Namespaces
+				.Where(n => n.Prefix.None())
+				.FirstOrDefault()
+				.SelectOrDefault(n => n.Namespace);
+
+			_clrNamespaces = _knownNamespaces.UnoGetValueOrDefault(defaultXmlNamespace, new string[0]);
 		}
 
 		/// <summary>
@@ -344,10 +353,7 @@ namespace Uno.UI.SourceGenerators.XamlGenerator
 			{
 				do
 				{
-					if (type.Kind == SymbolKind.ErrorType)
-					{
-						throw new InvalidOperationException($"Unable to resolve {type} (SymbolKind is ErrorType) {type}");
-					}
+					ThrowOnErrorSymbol(type);
 
 					var resolvedType = type;
 
@@ -414,13 +420,10 @@ namespace Uno.UI.SourceGenerators.XamlGenerator
 
 			if (ownerType != null)
 			{
-				if (ownerType.Kind == SymbolKind.ErrorType)
-				{
-					throw new InvalidOperationException($"Unable to resolve {ownerType} (SymbolKind is ErrorType)");
-				}
+				ThrowOnErrorSymbol(ownerType);
 
-				if(GetEventsForType(ownerType).TryGetValue(xamlMember.Name, out var eventSymbol))
-				{ 
+				if (GetEventsForType(ownerType).TryGetValue(xamlMember.Name, out var eventSymbol))
+				{
 					return eventSymbol;
 				}
 			}
@@ -647,6 +650,19 @@ namespace Uno.UI.SourceGenerators.XamlGenerator
 			return objectDefinition.Members.Any(m => m.Member.Name == "_Initialization");
 		}
 
+		private static void ThrowOnErrorSymbol(ISymbol symbol)
+		{
+			if (symbol is IErrorTypeSymbol errorTypeSymbol)
+			{
+				var candidates = string.Join(";", errorTypeSymbol.CandidateSymbols);
+				var location = symbol.Locations.FirstOrDefault()?.ToString() ?? "Unknown";
+
+				throw new InvalidOperationException(
+					$"Unable to resolve {symbol} (Reason: {errorTypeSymbol.CandidateReason}, Location:{location}, Candidates: {candidates})"
+				);
+			}
+		}
+
 		private INamedTypeSymbol FindType(string name)
 			=> _findType(name);
 
@@ -730,16 +746,8 @@ namespace Uno.UI.SourceGenerators.XamlGenerator
 			}
 			else
 			{
-				var defaultXmlNamespace = _fileDefinition
-						.Namespaces
-						.Where(n => n.Prefix.None())
-						.FirstOrDefault()
-						.SelectOrDefault(n => n.Namespace);
-
-				var clrNamespaces = _knownNamespaces.UnoGetValueOrDefault(defaultXmlNamespace, new string[0]);
-
 				// Search first using the default namespace
-				foreach (var clrNamespace in clrNamespaces)
+				foreach (var clrNamespace in _clrNamespaces)
 				{
 					var type = _medataHelper.FindTypeByFullName(clrNamespace + "." + name) as INamedTypeSymbol;
 
