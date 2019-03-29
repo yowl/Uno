@@ -3,6 +3,14 @@
 ## Next version
 
 ### Features
+
+### Breaking Changes
+
+### Bug fixes
+
+## Release 1.44.0
+
+### Features
 * Add support for `ICollectionView.CopyTo`
 * Add support for `ViewBox`
 * Add support for `AutoSuggestBox.ItemsSource`
@@ -27,9 +35,29 @@
 * Add support for `Application.OnWindowCreated`
 * Added non-throwing stubs for `AutomationProperty`
 * Add missing system resources
+* Add support for x:Bind in StaticResources (#696)
+* Add support for x:Name late binding support to adds proper support for CollectionViewSource in Resources (#696)
+* `PointerRelease` events are now marked as handled by the `TextBox`
+* `KeyDown` events that are changing the cursor position (left/right/top/bottom/home/end) are now marked as handled by the `TextBox`
+* `RoutedEventArgs.IsGenerated` returns `false` as generating events with Uno is not yet supported
+* `AutomationPeer.ListenerExists` returns `false` as we cannot generating events with Uno is not yet supported
+* `KeyUp` event properly sends `KeyEventArgs` to the controls
+* Add ItemsSource CollectionViewSource update support (#697)
+* Add support for the `CollectionViewSource.ItemsPath` property
+* Fixed support for dots in resource names (#700)
+* Add support for `BindingExpression.UpdateSource()`
+* Updated Android version to target Android 9.0
+* The CI validates for API breaking changes
+* Added samples application BenchmarkDotNet support.
 
 ### Breaking changes
 * Make `UIElement.IsPointerPressed` and `IsPointerOver` internal
+* You will not be able to build projects targeting Android 8.0 locally anymore. Change your Android target to Android 9.0 or replace MonoAndroid90 by MonoAndroid80 in the TargetFrameworks of your projects files.
+* 1.43.1 breaking changes rollback to 1.42.0:
+    - `ObservableVector<T>` is now internal again
+    - `TimePicker.Time` and `TimePicker.MinuteIncrement` are now back for `netstandard2.0`
+    - `MediaPlaybackItem.Source` is back as a readonly property
+    - `MediaPlaybackList.Items` is back to an `IObservableVector`
 
 ### Bug fixes
  * Transforms are now fully functionnal
@@ -47,7 +75,11 @@
  * [Wasm] Fixes lements may not be removed form the global active DOM elements tracking map
  * [Wasm] Disable the root element scrolling (bounce) on touch devices
  * Fixed invalid iOS assets folder. `ImageAsset` nodes must not be `<Visible>false</Visible>` to be copied to the generated project.
-
+ * Make CollectionViewSource.View a proper DependencyProperty (#697)
+ * Fixed support for string support for `Path.Data` (#698)
+ * 150018 Fix nullref in `Pivot` when using native style
+ * 149312 [Android] Added `FeatureConfiguration.NativeListViewBase.RemoveItemAnimator` to remove the ItemAnimator that crashes when under stress
+ * 150156 Fix `ComboBox` not working when using `Popover`.
 
 ## Release 1.43.1
 
@@ -113,6 +145,7 @@
 * Improved XAML designer support
 * Improved DependencyObject performance under AOT (JS dynCalls for overrides/delegates inside of EH blocks)
 * Add support for MatrixTransform, UIElement.TransformToVisual now returns a MatrixTransform
+* 140564 [Android] Added workaround for inverted ListView fling issue on Android P
 
 ### Breaking changes
 * Refactored ToggleSwitch Default Native XAML Styles. (cf. 'NativeDefaultToggleSwitch' styles in Generic.Native.xaml)
