@@ -4,6 +4,7 @@ using Uno.Diagnostics.Eventing;
 using Uno.Extensions;
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,6 +30,31 @@ namespace Windows.UI.Core
 	public sealed partial class CoreDispatcher
 	{
 		private readonly static IEventProvider _trace = Tracing.Get(TraceProvider.Id);
+		[DllImport("*")]
+		private static unsafe extern int printf(byte* str, byte* unused);
+		public struct TwoByteStr
+		{
+			public byte first;
+			public byte second;
+		}
+		private static unsafe void PrintString(string s)
+		{
+			int length = s.Length;
+			fixed (char* curChar = s)
+			{
+				for (int i = 0; i < length; i++)
+				{
+					TwoByteStr curCharStr = new TwoByteStr();
+					curCharStr.first = (byte)(*(curChar + i));
+					printf((byte*)&curCharStr, null);
+				}
+			}
+		}
+		public static void PrintLine(string s)
+		{
+			PrintString(s);
+			PrintString("\n");
+		}
 
 		public static class TraceProvider
 		{
@@ -192,7 +218,12 @@ namespace Windows.UI.Core
 		{
 			EnqueueOperation(
 				CoreDispatcherPriority.Idle,
-				() => handler(_idleDispatchedHandlerArgs),
+				() =>
+				{
+					PrintLine("RunIdleAsync handler");
+					handler(_idleDispatchedHandlerArgs);
+					PrintLine("RunIdleAsync handler complete");
+				},
 				out var operation
 			);
 
@@ -290,6 +321,8 @@ namespace Windows.UI.Core
 
 			if (operation != null)
 			{
+				PrintLine("dispatch found operation ");
+
 				if (!operation.IsCancelled)
 				{
 					IDisposable? runActivity = null;
@@ -305,11 +338,13 @@ namespace Windows.UI.Core
 								payload: new[] { ((int)CurrentPriority).ToString(), operation.GetDiagnosticsName() }
 							);
 						}
-
+						PrintLine("dispatch operation " + operation.GetDiagnosticsName());
 						using (runActivity)
 						using (GetSyncContext(CurrentPriority).Apply())
 						{
 							operation.Action();
+							PrintLine("dispatch operation Action complete");
+
 							operation.Complete();
 						}
 					}

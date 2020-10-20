@@ -617,6 +617,8 @@ namespace Windows.UI.Xaml.Controls
 		{
 			ViewportMeasureSize = availableSize;
 
+			FrameworkElementHelper.PrintLine("ScrollViewer.MeasureOverride " + availableSize);
+
 			return base.MeasureOverride(availableSize);
 		}
 
@@ -1018,10 +1020,14 @@ namespace Windows.UI.Xaml.Controls
 
 			Dispatcher.RunIdleAsync(e =>
 			{
+				FrameworkElementHelper.PrintLine("ScrollViewer RunIdleAsync");
+
 				if (_hasPendingUpdate)
 				{
 					Update(isIntermediate: true);
 				}
+				FrameworkElementHelper.PrintLine("ScrollViewer RunIdleAsync  end");
+
 			});
 			_hasPendingUpdate = true;
 		}

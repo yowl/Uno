@@ -90,7 +90,10 @@ namespace Windows.UI.Xaml
 				}
 				else
 				{
+					Application.PrintLine("ApplyTo SetValue for Prop " + Property.Name);
 					o.SetValue(Property, BindingPropertyHelper.Convert(() => Property.Type, value));
+					Application.PrintLine("ApplyTo SetValue complete");
+
 				}
 			}
 			else

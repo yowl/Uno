@@ -104,7 +104,7 @@ namespace SamplesApp
 			var n = Windows.UI.Xaml.Window.Current.Dispatcher.RunIdleAsync(
 				_ =>
 				{
-					Console.WriteLine("Done loading " + sw.Elapsed);
+					PrintLine("Done loading");
 				});
 
 			ProcessEventArgs(e);
@@ -217,6 +217,8 @@ namespace SamplesApp
 
 		private void InitializeFrame(string arguments = null)
 		{
+			Application.PrintLine("InitializeFrame");
+
 			Frame rootFrame = Windows.UI.Xaml.Window.Current.Content as Frame;
 
 			// Do not repeat app initialization when the Window already has content,
@@ -230,7 +232,7 @@ namespace SamplesApp
 
 				// Place the frame in the current Window
 				Windows.UI.Xaml.Window.Current.Content = rootFrame;
-				Console.WriteLine($"RootFrame: {rootFrame}");
+				Application.PrintLine($"RootFrame: {rootFrame}");
 			}
 
 			if (rootFrame.Content == null)
@@ -248,6 +250,7 @@ namespace SamplesApp
 					rootFrame.Navigate(startingPageType);
 				}
 			}
+			Application.PrintLine("InitializeFrame end");
 		}
 
 		private async void DisplayLaunchArguments(LaunchActivatedEventArgs launchActivatedEventArgs)

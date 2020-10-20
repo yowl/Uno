@@ -48,7 +48,7 @@ namespace Uno.UI
 				.NumberOrDefault(new Size(PositiveInfinity, PositiveInfinity))
 				.AtMost(maxSize)
 				.AtLeast(minSize); // UWP is applying "min" after "max", so if "min" > "max", "min" wins
-
+			FrameworkElementHelper.PrintLine("GetMinMax max is  " + maxSize);
 			return (minSize, maxSize);
 		}
 

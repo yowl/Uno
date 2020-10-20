@@ -53,13 +53,17 @@ namespace Windows.UI.Xaml
 				//		 as on UWP, even if the event are RoutedEvents, PointerEntered and PointerExited
 				//		 are routed only in some particular cases (entering at once on multiple controls),
 				//		 it's easier to handle this in managed code.
+				Application.PrintLine("AddPointerHandler register events");
 				RegisterEventHandler("pointerenter", (RawEventHandler)DispatchNativePointerEnter);
 				RegisterEventHandler("pointerleave", (RawEventHandler)DispatchNativePointerLeave);
 				RegisterEventHandler("pointerdown", (RawEventHandler)DispatchNativePointerDown);
 				RegisterEventHandler("pointerup", (RawEventHandler)DispatchNativePointerUp);
 				RegisterEventHandler("pointercancel", (RawEventHandler)DispatchNativePointerCancel); //https://www.w3.org/TR/pointerevents/#the-pointercancel-event
+				Application.PrintLine("AddPointerHandler register events done");
+
 			}
 
+			Application.PrintLine("AddPointerHandler routedEvent.Flag");
 			switch (routedEvent.Flag)
 			{
 				case RoutedEventFlag.PointerEntered:
@@ -96,9 +100,13 @@ namespace Windows.UI.Xaml
 					break;
 
 				default:
+					Application.PrintLine("AddPointerHandler RaiseRecoverableUnhandledException");
+
 					Application.Current.RaiseRecoverableUnhandledException(new NotImplementedException($"Pointer event {routedEvent.Name} is not supported on this platform"));
 					break;
 			}
+			Application.PrintLine("AddPointerHandler end");
+
 		}
 		#endregion
 

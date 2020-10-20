@@ -18,9 +18,10 @@ using Uno.UI.Xaml;
 using Uno;
 using System.Web;
 using System.Collections.Specialized;
+using System.Runtime.InteropServices;
 using Uno.Helpers;
 using Microsoft.Extensions.Logging;
-
+using Uno.Diagnostics.Eventing;
 #if HAS_UNO_WINUI
 using LaunchActivatedEventArgs = Microsoft.UI.Xaml.LaunchActivatedEventArgs;
 #else
@@ -74,7 +75,31 @@ namespace Windows.UI.Xaml
 			WebAssemblyRuntime.InvokeJS("Windows.UI.Xaml.Application.observeSystemTheme()");
 		}
 
-
+		[DllImport("*")]
+		private static unsafe extern int printf(byte* str, byte* unused);
+		public struct TwoByteStr
+		{
+			public byte first;
+			public byte second;
+		}
+		private static unsafe void PrintString(string s)
+		{
+			int length = s.Length;
+			fixed (char* curChar = s)
+			{
+				for (int i = 0; i < length; i++)
+				{
+					CoreDispatcher.TwoByteStr curCharStr = new CoreDispatcher.TwoByteStr();
+					curCharStr.first = (byte)(*(curChar + i));
+					printf((byte*)&curCharStr, null);
+				}
+			}
+		}
+		public static void PrintLine(string s)
+		{
+			PrintString(s);
+			PrintString("\n");
+		}
 		private void Initialize()
 		{
 			using (WritePhaseEventTrace(TraceProvider.LauchedStart, TraceProvider.LauchedStop))
@@ -89,18 +114,24 @@ namespace Windows.UI.Xaml
 					this.Log().Debug("Launch arguments: " + arguments);
 				}
 				InitializationCompleted();
-
+				PrintLine("InitializationCompleted");
 				if (!string.IsNullOrEmpty(arguments))
 				{
+					PrintLine("InitializationCompleted args " + arguments);
+
 					if (ProtocolActivation.TryParseActivationUri(arguments, out var activationUri))
 					{
+						PrintLine("Initialize OnActivated ");
 						OnActivated(new ProtocolActivatedEventArgs(activationUri, ApplicationExecutionState.NotRunning));
+						PrintLine("Initialize OnActivated end ");
 						return;
 					}
 				}
-
+						PrintLine("Initialize OnLaunched ");
 				OnLaunched(new LaunchActivatedEventArgs(ActivationKind.Launch, arguments));
 			}
+			PrintLine("Initialize end");
+
 		}
 
 		private ApplicationTheme GetDefaultSystemTheme()

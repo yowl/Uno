@@ -39,6 +39,8 @@ namespace Windows.UI.Xaml.Controls
 				// ContentPresenter programmatically, Android/iOS skip it entirely)
 				ApplyDefaultStyle();
 			}
+			FrameworkElementHelper.PrintLine("ContentControl.MeasureOverride " + availableSize);
+
 			return base.MeasureOverride(availableSize);
 		}
 	}

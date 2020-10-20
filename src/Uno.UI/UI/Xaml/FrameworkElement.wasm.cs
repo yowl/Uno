@@ -43,14 +43,19 @@ namespace Windows.UI.Xaml
 		internal sealed override void ManagedOnLoading()
 		{
 			base.IsLoading = true;
-
+			Application.PrintLine("ManagedOnLoading " + GetType().FullName);
 			OnLoadingPartial();
+			Application.PrintLine("ManagedOnLoading OnLoadingPartial");
+
 			ApplyCompiledBindings();
+			Application.PrintLine("ManagedOnLoading ApplyCompiledBindings");
 
 			try
 			{
 				// Raise event before invoking base in order to raise them top to bottom
 				_loading?.Invoke(this, new RoutedEventArgs(this));
+				Application.PrintLine("ManagedOnLoading Invoke");
+
 			}
 			catch (Exception error)
 			{
@@ -59,11 +64,14 @@ namespace Windows.UI.Xaml
 			}
 
 			OnPostLoading();
+			Application.PrintLine("ManagedOnLoading OnPostLoading");
 
 			// Explicit propagation of the loading even must be performed
 			// after the compiled bindings are applied (cf. OnLoading), as there may be altered
 			// properties that affect the visual tree.
 			base.ManagedOnLoading();
+			Application.PrintLine("ManagedOnLoading base.ManagedOnLoading");
+
 		}
 
 		private void NativeOnLoading(object sender, RoutedEventArgs args)
@@ -195,6 +203,7 @@ namespace Windows.UI.Xaml
 		{
 			add
 			{
+				Application.PrintLine("Loading add");
 				if (FeatureConfiguration.FrameworkElement.WasmUseManagedLoadedUnloaded)
 				{
 					_loading += value;
@@ -203,6 +212,8 @@ namespace Windows.UI.Xaml
 				{
 					RegisterEventHandler("loading", value);
 				}
+				Application.PrintLine("Loading add end");
+
 			}
 			remove
 			{
@@ -222,6 +233,8 @@ namespace Windows.UI.Xaml
 		{
 			add
 			{
+				Application.PrintLine("Loaded add");
+
 				if (FeatureConfiguration.FrameworkElement.WasmUseManagedLoadedUnloaded)
 				{
 					_loaded += value;
@@ -230,6 +243,8 @@ namespace Windows.UI.Xaml
 				{
 					RegisterEventHandler("loaded", value);
 				}
+				Application.PrintLine("Loaded add end");
+
 			}
 			remove
 			{

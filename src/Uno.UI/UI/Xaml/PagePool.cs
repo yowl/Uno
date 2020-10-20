@@ -35,48 +35,68 @@ namespace Windows.UI.Xaml
 			_watch.Start();
 
 #if !NET461
+			FrameworkElementHelper.PrintLine("PagePool ctor");
 			CoreDispatcher.Main.RunIdleAsync(Scavenger);
+			FrameworkElementHelper.PrintLine("Scavenger on idle");
 #endif
 		}
 
 		private async void Scavenger(IdleDispatchedHandlerArgs e)
 		{
+			FrameworkElementHelper.PrintLine("PagePool Scavenger");
+
 			var now = _watch.Elapsed;
 			var removedInstancesCount = 0;
+			FrameworkElementHelper.PrintLine("PagePool before foreach");
 
 			foreach (var list in _pooledInstances.Values)
 			{
+				FrameworkElementHelper.PrintLine("PagePool list " + list.Count);
+
 				removedInstancesCount += list.RemoveAll(t => now - t.CreationTime > TimeToLive);
 			}
+			FrameworkElementHelper.PrintLine("PagePool after foreach");
 
 			if (removedInstancesCount > 0)
 			{
 				// Under iOS and Android, we need to force the collection for the GC
 				// to pick up the orphan instances that we've just released.
+				FrameworkElementHelper.PrintLine("PagePool GC.Collect");
 
 				GC.Collect();
 			}
 
+			FrameworkElementHelper.PrintLine("PagePool await Task.Delay");
+
 			await Task.Delay(TimeSpan.FromSeconds(30));
 
+			FrameworkElementHelper.PrintLine("PagePool RunIdleAsync(Scavenger)");
 			CoreDispatcher.Main.RunIdleAsync(Scavenger);
+			FrameworkElementHelper.PrintLine("PagePool after RunIdleAsync(Scavenger)");
+
 		}
 
 		internal Page DequeuePage(Type pageType)
 		{
+					Application.PrintLine("DequeuePage Page.IsPoolingEnabled");
 			if (!FeatureConfiguration.Page.IsPoolingEnabled)
 			{
+				Application.PrintLine("DequeuePage CreatePageInstance 1 " + pageType.FullName);
 				return Frame.CreatePageInstance(pageType);
 			}
 
+				Application.PrintLine("DequeuePage UnoGetValueOrDefault 1");
 			var list = _pooledInstances.UnoGetValueOrDefault(pageType);
 
 			if (list == null || list.Count == 0)
 			{
+				Application.PrintLine("DequeuePage CreatePageInstance 2");
 				return Frame.CreatePageInstance(pageType);
 			}
 			else
 			{
+				Application.PrintLine("DequeuePage else");
+
 				var position = list.Count - 1;
 				var instance = list[position].PageInstance;
 				list.RemoveAt(position);

@@ -1,4 +1,4 @@
-﻿using System;
+﻿	using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -34,6 +34,10 @@ namespace Uno.UI.DataBinding
 
 		public ActivatorDelegate CreateInstance()
 		{
+			Application.PrintLine("ActivatorDelegate CreateInstance " + (_activator == null));
+			var x = _activator();
+			Application.PrintLine("ActivatorDelegate called activator ");
+
 			return _activator;
 		}
 
@@ -56,6 +60,11 @@ namespace Uno.UI.DataBinding
 
 		public void AddActivator(ActivatorDelegate activator)
 		{
+			Application.PrintLine("ActivatorDelegate setting activator ");
+
+			var p = activator();
+			Application.PrintLine("ActivatorDelegate setting activator and called");
+
 			_activator = activator;
 		}
 

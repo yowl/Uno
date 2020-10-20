@@ -140,6 +140,8 @@ namespace Windows.UI.Xaml.Controls
 
 		protected override Size MeasureOverride(Size availableSize)
 		{
+			FrameworkElementHelper.PrintLine("Grid.MeasureOverride " + availableSize);
+
 			if (this.Children.Count == 0)
 			{
 				return default(Size);
@@ -147,12 +149,14 @@ namespace Windows.UI.Xaml.Controls
 
 			var borderAndPaddingSize = BorderAndPaddingSize;
 			availableSize = availableSize.Subtract(borderAndPaddingSize);
+			FrameworkElementHelper.PrintLine("Grid.MeasureOverride -border " + availableSize);
 
 			var definedColumns = GetColumns(false).Span;
 			var definedRows = GetRows(false).Span;
 
 			var spacingSize = new Size(ColumnSpacing * (definedColumns.Length - 1), RowSpacing * (definedRows.Length - 1));
 			availableSize = availableSize.Subtract(spacingSize);
+			FrameworkElementHelper.PrintLine("Grid.MeasureOverride -spacing " + availableSize);
 
 			var considerStarColumnsAsAuto = ConsiderStarColumnsAsAuto(availableSize.Width);
 			var considerStarRowsAsAuto = ConsiderStarRowsAsAuto(availableSize.Height);
@@ -161,6 +165,8 @@ namespace Windows.UI.Xaml.Controls
 			var rows = GetRows(considerStarRowsAsAuto).Span;
 
 			Size size;
+			FrameworkElementHelper.PrintLine("Grid.MeasureOverride calling " + availableSize);
+
 			if (!TryMeasureUsingFastPath(availableSize, columns, definedColumns, rows, definedRows, out size))
 			{
 				var measureChild = GetMemoizedMeasureChild();

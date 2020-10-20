@@ -81,9 +81,12 @@ namespace Windows.UI.Xaml.Controls
 
 		protected void OnChildChanged(UIElement oldValue, UIElement newValue)
 		{
+			Application.PrintLine("OnChildChanged");
 			ReAttachChildTransitions(oldValue, newValue);
+			Application.PrintLine("OnChildChanged ReAttachChildTransitions");
 
 			OnChildChangedPartial(oldValue, newValue);
+			Application.PrintLine("OnChildChanged OnChildChangedPartial");
 		}
 
 		partial void OnChildChangedPartial(UIElement previousValue, UIElement newValue);

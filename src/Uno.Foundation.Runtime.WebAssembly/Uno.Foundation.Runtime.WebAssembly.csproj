@@ -26,6 +26,14 @@
 		<Copyright>Copyright (C) 2015-2020 nventive inc. - all rights reserved</Copyright>
 	</PropertyGroup>
 	
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+	  <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	</PropertyGroup>
+	
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+	  <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	</PropertyGroup>
+	
 	<ItemGroup>
 		<None Include="..\Common\uno.png" Pack="true" PackagePath="\" />
 	</ItemGroup>

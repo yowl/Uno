@@ -1,6 +1,7 @@
 ﻿#if !__NETSTD_REFERENCE__
 using Windows.Foundation;
 using System;
+using Uno.UI;
 
 namespace Windows.UI.Xaml
 {
@@ -15,7 +16,12 @@ namespace Windows.UI.Xaml
 
 		public Size DesiredSize => Visibility == Visibility.Collapsed ? new Size(0, 0) : _desiredSize;
 
-		internal void SetDesiredSize(Size desiredSize) => _desiredSize = desiredSize;
+		internal void SetDesiredSize(Size desiredSize)
+		{
+			FrameworkElementHelper.PrintLine("UIElement set desiredSize " + desiredSize);
+
+			_desiredSize = desiredSize;
+		}
 
 		internal bool IsMeasureDirty => !_isMeasureValid;
 		internal bool IsArrangeDirty => !_isArrangeValid;
@@ -77,6 +83,8 @@ namespace Windows.UI.Xaml
 
 		public void Measure(Size availableSize)
 		{
+			FrameworkElementHelper.PrintLine("UIElement.Layout Measure availableSize " + availableSize);
+
 			if (!(this is FrameworkElement))
 			{
 				return;
@@ -106,6 +114,7 @@ namespace Windows.UI.Xaml
 			}
 
 			InvalidateArrange();
+			FrameworkElementHelper.PrintLine("UIElement.Layout call MeasureCore with availableSize " + availableSize);
 
 			MeasureCore(availableSize);
 			_previousAvailableSize = availableSize;

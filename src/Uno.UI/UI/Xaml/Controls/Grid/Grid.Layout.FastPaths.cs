@@ -51,6 +51,8 @@ namespace Windows.UI.Xaml.Controls
 			if (columnCount == 1 && rowCount == 1)
 			{
 				// 1x1
+				FrameworkElementHelper.PrintLine("Grid.TryMeasureUsingFastPath " + availableSize);
+
 				size = MeasureSuperpositionPanel(availableSize, columns[0], rows[0]);
 				return true;
 			}
@@ -179,11 +181,15 @@ namespace Windows.UI.Xaml.Controls
 		/// </summary>
 		private Size MeasureSuperpositionPanel(Size availableSize, Column column, Row row)
 		{
+			FrameworkElementHelper.PrintLine("Grid.MeasureSuperpositionPanel " + availableSize);
+
 			var size = default(Size);
 			if (column.Width.IsPixelSize)
 			{
 				var pixelWidth = column.Width.PixelSize.Value;
 				availableSize.Width = pixelWidth;
+				FrameworkElementHelper.PrintLine("Grid.MeasureSuperpositionPanel width now" + availableSize);
+
 				size.Width = pixelWidth;
 			}
 			if (row.Height.IsPixelSize)
@@ -195,6 +201,8 @@ namespace Windows.UI.Xaml.Controls
 
 			foreach (var child in Children)
 			{
+				FrameworkElementHelper.PrintLine("Grid.MeasureSuperpositionPanel MeasureElement " + availableSize);
+
 				var childSize = MeasureElement(child, availableSize);
 				size = new Size(
 					Math.Max(childSize.Width, size.Width),

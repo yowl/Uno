@@ -77,7 +77,11 @@ namespace Windows.UI.Xaml
 			if (_window != null)
 			{
 				var sw = Stopwatch.StartNew();
+				FrameworkElementHelper.PrintLine("DispatchInvalidateMeasure " + Bounds.Size);
+
 				_window.Measure(Bounds.Size);
+				FrameworkElementHelper.PrintLine("DispatchInvalidateMeasure Arrange");
+
 				_window.Arrange(Bounds);
 				sw.Stop();
 
@@ -86,11 +90,15 @@ namespace Windows.UI.Xaml
 					this.Log().Debug($"DispatchInvalidateMeasure: {sw.Elapsed}");
 				}
 			}
+
+			FrameworkElementHelper.PrintLine("DispatchInvalidateMeasure end");
+
 		}
 
 		[Preserve]
 		public static void Resize(double width, double height)
 		{
+			FrameworkElementHelper.PrintLine("Window Resize " + width + "," + height);
 			var window = Current?._window;
 			if (window == null)
 			{
@@ -103,6 +111,7 @@ namespace Windows.UI.Xaml
 
 		private void OnNativeSizeChanged(Size size)
 		{
+			FrameworkElementHelper.PrintLine("OnNativeSizeChanged " + size.Width);
 			var newBounds = new Rect(0, 0, size.Width, size.Height);
 
 			if (newBounds != Bounds)
@@ -114,14 +123,22 @@ namespace Windows.UI.Xaml
 
 				Bounds = newBounds;
 
+				FrameworkElementHelper.PrintLine("OnNativeSizeChanged bounds changed " + newBounds);
+
 				DispatchInvalidateMeasure();
+				FrameworkElementHelper.PrintLine("OnNativeSizeChanged DispatchInvalidateMeasure done " + Bounds);
+
 				RaiseSizeChanged(new Windows.UI.Core.WindowSizeChangedEventArgs(size));
+				FrameworkElementHelper.PrintLine("OnNativeSizeChanged RaiseSizeChanged done");
 
 				// Note that UWP raises the ApplicationView.VisibleBoundsChanged event
 				// *after* Window.SizeChanged.
 
 				// TODO: support for "viewport-fix" on devices with a notch.
 				ApplicationView.GetForCurrentView()?.SetVisibleBounds(newBounds);
+
+				FrameworkElementHelper.PrintLine("OnNativeSizeChanged SetVisibleBounds done");
+
 			}
 		}
 
@@ -153,31 +170,46 @@ namespace Windows.UI.Xaml
 					}
 				};
 			}
-
+			Application.PrintLine("setting Child");
 			_rootBorder.Child = _content = content;
+			Application.PrintLine("set Child");
 			if (content != null)
 			{
+				Application.PrintLine("set Child content != null");
 				if (FeatureConfiguration.FrameworkElement.WasmUseManagedLoadedUnloaded && !_window.IsLoaded)
 				{
+					Application.PrintLine("set Child ManagedOnLoading");
+
 					_window.ManagedOnLoading();
+					Application.PrintLine("set Child ManagedOnLoadingx");
+
 				}
+				Application.PrintLine("set Child setRootContent");
 
 				WebAssemblyRuntime.InvokeJS($"Uno.UI.WindowManager.current.setRootContent({_window.HtmlId});");
 
+				Application.PrintLine("set Child WasmUseManagedLoadedUnloaded");
 				if (FeatureConfiguration.FrameworkElement.WasmUseManagedLoadedUnloaded && !_window.IsLoaded)
 				{
+					Application.PrintLine("set Child ManagedOnLoaded");
 					_window.ManagedOnLoaded(1);
+					Application.PrintLine("set Child ManagedOnLoadedx");
 				}
 			}
 			else
 			{
+				Application.PrintLine("set Child setRootContent2");
 				WebAssemblyRuntime.InvokeJS($"Uno.UI.WindowManager.current.setRootContent();");
+				Application.PrintLine("set Child setRootContent2x");
 
 				if (FeatureConfiguration.FrameworkElement.WasmUseManagedLoadedUnloaded && _window.IsLoaded)
 				{
+				Application.PrintLine("set Child setRootContent ManagedOnUnloaded");
 					_window.ManagedOnUnloaded();
+					Application.PrintLine("set Child setRootContent ManagedOnUnloadedx");
 				}
 			}
+			Application.PrintLine("InternalSetContentx");
 		}
 
 		private UIElement InternalGetContent()

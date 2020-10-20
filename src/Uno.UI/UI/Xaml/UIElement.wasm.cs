@@ -64,6 +64,8 @@ namespace Windows.UI.Xaml
 
 		public Size MeasureView(Size availableSize)
 		{
+			FrameworkElementHelper.PrintLine("UIElement.MeasureView " + availableSize);
+
 			return Uno.UI.Xaml.WindowManagerInterop.MeasureView(HtmlId, availableSize);
 		}
 
@@ -90,19 +92,30 @@ namespace Windows.UI.Xaml
 
 		public UIElement(string htmlTag, bool isSvg)
 		{
+			Application.PrintLine("UIElement Initialize");
+
 			Initialize();
+			Application.PrintLine("UIElement GCHandle.Alloc");
 
 			_gcHandle = GCHandle.Alloc(this, GCHandleType.Weak);
+			Application.PrintLine("UIElement this is FrameworkElement");
 			_isFrameworkElement = this is FrameworkElement;
+			Application.PrintLine("UIElement GetHtmlTag");
 
 			HtmlTag = GetHtmlTag(htmlTag);
+			Application.PrintLine("UIElement HtmlTagIsSvg");
 			HtmlTagIsSvg = isSvg;
 
+			Application.PrintLine("UIElement var type");
 			var type = GetType();
+			Application.PrintLine("UIElement Handle");
 
 			Handle = GCHandle.ToIntPtr(_gcHandle);
+			Application.PrintLine("UIElement HtmlId");
 			HtmlId = Handle;
-
+			Application.PrintLine("UIElement CreateContent");
+			Application.PrintLine("UIElement CreateContent id" + HtmlId.ToString());
+			Application.PrintLine("UIElement CreateContent tag" + HtmlTag);
 			Uno.UI.Xaml.WindowManagerInterop.CreateContent(
 				htmlId: HtmlId,
 				htmlTag: HtmlTag,
@@ -124,14 +137,31 @@ namespace Windows.UI.Xaml
 		private string GetHtmlTag(string htmlTag)
 		{
 			var currentType = GetType();
-
+			Application.PrintLine("GetHtmlTag" + htmlTag);
 			if (currentType.Assembly != _unoUIAssembly)
 			{
+				Application.PrintLine("GetHtmlTag not uno ass");
+
 				if (_htmlElementAttribute == null)
 				{
-					_htmlElementAttribute = Assembly.Load("Uno.UI.Runtime.WebAssembly").GetType("Uno.UI.Runtime.WebAssembly.HtmlElementAttribute", true);
+					Application.PrintLine("_htmlElementAttribute is null");
+
+					var ass = Assembly.Load("Uno.UI.Runtime.WebAssembly");
+					if (ass == null)
+					{
+						Application.PrintLine("ass == null");
+					}
+					else
+					{
+						Application.PrintLine("ass != null");
+
+					}
+					_htmlElementAttribute = ass.GetType("Uno.UI.Runtime.WebAssembly.HtmlElementAttribute", true);
+					Application.PrintLine("after Assembly.Load");
+
 					_htmlTagAttributeTagGetter = _htmlElementAttribute.GetProperty("Tag");
 				}
+				Application.PrintLine("after _htmlElementAttribute");
 
 				if (!_htmlTagCache.TryGetValue(currentType, out var htmlTagOverride))
 				{
@@ -139,6 +169,8 @@ namespace Windows.UI.Xaml
 
 					if (currentType.GetCustomAttribute(_htmlElementAttribute) is Attribute attr)
 					{
+						Application.PrintLine("after GetCustomAttribute");
+
 						_htmlTagCache[currentType] = htmlTagOverride = _htmlTagAttributeTagGetter.GetValue(attr, Array.Empty<object>()) as string;
 					}
 
@@ -716,7 +748,7 @@ namespace Windows.UI.Xaml
 					? "keyup"
 					: throw new ArgumentOutOfRangeException(nameof(routedEvent), "Not a keyboard event");
 			}
-
+			Application.PrintLine("AddKeyHandler");
 			RegisterEventHandler(
 				domEventName,
 				handler: new RoutedEventHandlerWithHandled((snd, args) => RaiseEvent(routedEvent, args)),

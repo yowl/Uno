@@ -54,28 +54,39 @@ namespace Windows.UI.Xaml
 				this.Log().Warn("Style.ApplyTo - Applied to null object - Skipping");
 				return;
 			}
-
+			Application.PrintLine("ApplyTo if");
 			using (DependencyObjectExtensions.OverrideLocalPrecedence(o, precedence))
 			{
+				Application.PrintLine("ApplyTo using");
 				var flattenedSetters = CreateSetterMap();
 #if !HAS_EXPENSIVE_TRYFINALLY
 				try
 #endif
 				{
+					Application.PrintLine("ApplyTo try");
 					ResourceResolver.PushNewScope(_xamlScope);
+					Application.PrintLine("ApplyTo PushNewScope");
+
 					foreach (var pair in flattenedSetters)
 					{
+						Application.PrintLine("ApplyTo Value " + pair.Value.Target.GetType().FullName + " " + pair.Value.Method.Name);
+
 						pair.Value(o);
+						Application.PrintLine("ApplyTo Value " + pair.Value.Target.GetType().FullName + " " + pair.Value.Method.Name);
+
 					}
 
 					// Check tree for resource binding values, since some Setters may have set ThemeResource-backed values
 					(o as IDependencyObjectStoreProvider).Store.UpdateResourceBindings(isThemeChangedUpdate: false);
+					Application.PrintLine("ApplyTo UpdateResourceBindings");
 				}
 #if !HAS_EXPENSIVE_TRYFINALLY
 				finally
 #endif
 				{
 					ResourceResolver.PopScope();
+					Application.PrintLine("ApplyTo PopScope");
+
 				}
 			}
 		}

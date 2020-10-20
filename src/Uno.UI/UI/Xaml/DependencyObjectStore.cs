@@ -1111,11 +1111,13 @@ namespace Windows.UI.Xaml
 		/// </summary>
 		internal void UpdateResourceBindings(bool isThemeChangedUpdate, ResourceDictionary? containingDictionary = null)
 		{
+			Application.PrintLine("UpdateResourceBindings start");
 			if (_resourceBindings == null || _resourceBindings.Count == 0)
 			{
 				UpdateChildResourceBindings(isThemeChangedUpdate);
 				return;
 			}
+			Application.PrintLine("UpdateResourceBindings if (_resourceBindings");
 
 			var dictionariesInScope = GetResourceDictionaries(includeAppResources: false, containingDictionary).ToArray();
 
@@ -1131,7 +1133,9 @@ namespace Windows.UI.Xaml
 						if (dict.TryGetValue(kvp.Value.ResourceKey, out var value, shouldCheckSystem: false))
 						{
 							wasSet = true;
+							Application.PrintLine("UpdateResourceBindings SetValue " + kvp.Key.Name);
 							SetValue(kvp.Key, BindingPropertyHelper.Convert(() => kvp.Key.Type, value), kvp.Value.Precedence);
+							Application.PrintLine("UpdateResourceBindings SetValue e " + kvp.Key.Name);
 							break;
 						}
 					}
@@ -1158,8 +1162,10 @@ namespace Windows.UI.Xaml
 				// TryRemoveResourceBinding() will have removed the entries - we just put them straight back again.
 				_resourceBindings[kvp.Key] = kvp.Value;
 			}
+			Application.PrintLine("UpdateResourceBindings UpdateChildResourceBindings");
 
 			UpdateChildResourceBindings(isThemeChangedUpdate);
+			Application.PrintLine("UpdateResourceBindings UpdateChildResourceBindingse");
 		}
 
 		private bool _isUpdatingChildResourceBindings;

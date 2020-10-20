@@ -157,11 +157,15 @@ namespace Windows.UI.Xaml
 		/// <returns>The size that this object determines it needs during layout, based on its calculations of the allocated sizes for child objects or based on other considerations such as a fixed container size.</returns>
 		protected virtual Size MeasureOverride(Size availableSize)
 		{
+			FrameworkElementHelper.PrintLine("FrameworkElement  MeasureOverride1 " + availableSize);
+
 #if !NETSTANDARD2_0
 			LastAvailableSize = availableSize;
 #endif
 
 			var child = this.FindFirstChild();
+			FrameworkElementHelper.PrintLine("FrameworkElement  MeasureOverride2 " + availableSize);
+
 			return child != null ? MeasureElement(child, availableSize) : new Size(0, 0);
 		}
 
@@ -242,7 +246,11 @@ namespace Windows.UI.Xaml
 		protected Size MeasureElement(View view, Size availableSize)
 		{
 #if NETSTANDARD
+			FrameworkElementHelper.PrintLine("MeasureElement availableSize " + availableSize);
+
 			view.Measure(availableSize);
+			FrameworkElementHelper.PrintLine("MeasureElement return " + view.DesiredSize);
+
 			return view.DesiredSize;
 #else
 			return _layouter.MeasureElement(view, availableSize);
@@ -285,14 +293,20 @@ namespace Windows.UI.Xaml
 
 		partial void OnLoadingPartial()
 		{
+			Application.PrintLine(" OnLoadingPartial");
 			// Apply active style and default style when we enter the visual tree, if they haven't been applied already.
 			ApplyStyles();
+			Application.PrintLine(" OnLoadingPartial ApplyStyles");
+
 		}
 
 		private protected void ApplyStyles()
 		{
 			ApplyStyle();
+			Application.PrintLine(" ApplyStyles ApplyStyle");
+
 			ApplyDefaultStyle();
+			Application.PrintLine(" ApplyStyles ApplyDefaultStyle");
 		}
 
 		/// <summary>
@@ -302,6 +316,7 @@ namespace Windows.UI.Xaml
 		[EditorBrowsable(EditorBrowsableState.Never)]
 		public void CreationComplete()
 		{
+			Application.PrintLine("CreationComplete");
 			if (!IsParsing)
 			{
 				throw new InvalidOperationException($"Called without matching {nameof(IsParsing)} call. This method should never be called from user code.");
@@ -319,9 +334,11 @@ namespace Windows.UI.Xaml
 				_isParsing = false;
 				ResourceResolver.PopSourceFromScope();
 			}
+			Application.PrintLine("CreationComplete e");
+
 		}
 
-#region Style DependencyProperty
+		#region Style DependencyProperty
 
 		public Style Style
 		{
@@ -423,10 +440,13 @@ namespace Windows.UI.Xaml
 				// Nothing to do
 				return;
 			}
+			Application.PrintLine(" OnStyleChanged s");
 
 			oldStyle?.ClearInvalidProperties(this, newStyle, precedence);
+			Application.PrintLine(" OnStyleChanged ClearInvalidProperties s");
 
 			newStyle?.ApplyTo(this, precedence);
+			Application.PrintLine(" OnStyleChanged ApplyTo s");
 		}
 
 		/// <summary>
@@ -440,11 +460,15 @@ namespace Windows.UI.Xaml
 			}
 			_defaultStyleApplied = true;
 
+			Application.PrintLine(" ApplyDefaultStyle GetDefaultStyleForType s");
 			var style = Style.GetDefaultStyleForType(GetDefaultStyleKey());
+			Application.PrintLine(" ApplyDefaultStyle GetDefaultStyleForType e");
 
 			// Although this is the default style, we use the ImplicitStyle enum value (which is otherwise unused) to ensure that it takes precedence
 			//over inherited property values. UWP's precedence system is simpler than WPF's, from which the enum is derived.
 			OnStyleChanged(null, style, DependencyPropertyValuePrecedences.ImplicitStyle);
+			Application.PrintLine(" ApplyDefaultStyle OnStyleChanged e");
+
 		}
 
 		/// <summary>

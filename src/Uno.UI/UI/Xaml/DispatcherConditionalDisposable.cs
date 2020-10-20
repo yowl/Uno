@@ -4,6 +4,7 @@ using System.Text;
 using Uno.Disposables;
 using Uno.UI.Common;
 using Windows.UI.Core;
+using Uno.UI;
 
 namespace Windows.UI.Xaml
 {
@@ -40,6 +41,7 @@ namespace Windows.UI.Xaml
 					CoreDispatcher.Main.RunIdleAsync(
 						delegate
 						{
+							FrameworkElementHelper.PrintLine("DispatcherConditionalDisposable RunIdleAsync");
 							action();
 						}
 					);

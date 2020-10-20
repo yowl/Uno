@@ -8,8 +8,11 @@ using Uno.Foundation;
 
 namespace Uno.Foundation.Interop
 {
-	public static class TSInteropMarshaller 
+	public static unsafe class TSInteropMarshaller 
 	{
+		[DllImport("*")]
+		private static unsafe extern int printf(byte* str, byte* unused);
+
 		private static readonly Lazy<ILogger> _logger = new Lazy<ILogger>(() => typeof(TSInteropMarshaller).Log());
 
 		public const UnmanagedType LPUTF8Str = (UnmanagedType)48;
@@ -35,6 +38,29 @@ namespace Uno.Foundation.Interop
 			// 		}
 			// }
 		}
+		public struct TwoByteStr
+		{
+			public byte first;
+			public byte second;
+		}
+		private static unsafe void PrintString(string s)
+		{
+			int length = s.Length;
+			fixed (char* curChar = s)
+			{
+				for (int i = 0; i < length; i++)
+				{
+					TwoByteStr curCharStr = new TwoByteStr();
+					curCharStr.first = (byte)(*(curChar + i));
+					printf((byte*)&curCharStr, null);
+				}
+			}
+		}
+		public static void PrintLine(string s)
+		{
+			PrintString(s);
+			PrintString("\n");
+		}
 
 		public static void InvokeJS<TParam>(
 			string methodName,
@@ -47,10 +73,13 @@ namespace Uno.Foundation.Interop
 				_logger.Value.LogDebug($"InvokeJS for {memberName}/{typeof(TParam)}");
 			}
 
+			PrintLine("methodName:" + methodName);
+			PrintLine("type:" + typeof(TParam).Name);
+			PrintLine("size:" + MarshalSizeOf<TParam>.Size.ToString());
 			var pParms = Marshal.AllocHGlobal(MarshalSizeOf<TParam>.Size);
 
 			Marshal.StructureToPtr(paramStruct, pParms, false);
-
+			PrintLine(pParms.ToInt32().ToString());
 			WebAssemblyRuntime.InvokeJSUnmarshalled(methodName, pParms, out var exception);
 
 			Marshal.DestroyStructure(pParms, typeof(TParam));

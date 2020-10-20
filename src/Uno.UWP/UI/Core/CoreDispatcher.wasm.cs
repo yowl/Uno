@@ -11,7 +11,7 @@ namespace Windows.UI.Core
 {
 	public sealed partial class CoreDispatcher
 	{
-		private readonly bool ThreadingSupported = Environment.GetEnvironmentVariable("UNO_BOOTSTRAP_MONO_RUNTIME_CONFIGURATION").StartsWith("threads", StringComparison.OrdinalIgnoreCase);
+		readonly bool ThreadingSupported = false;// CoreRT cannot read env. Environment.GetEnvironmentVariable("UNO_BOOTSTRAP_MONO_RUNTIME_CONFIGURATION").StartsWith("threads", StringComparison.OrdinalIgnoreCase);
 		private Timer _backgroundWakeupTimer;
 
 		/// <summary>

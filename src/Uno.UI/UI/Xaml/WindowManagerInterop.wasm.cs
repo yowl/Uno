@@ -273,6 +273,7 @@ namespace Uno.UI.Xaml
 
 				var ret = TSInteropMarshaller.InvokeJS<WindowManagerMeasureViewParams, WindowManagerMeasureViewReturn>("Uno:measureViewNative", parms);
 
+				TSInteropMarshaller.PrintLine(" WindowManagerMeasureViewParams returned " + ret.DesiredWidth + " " + ret.DesiredHeight + " for htmlId " + htmlId);
 				return new Size(ret.DesiredWidth, ret.DesiredHeight);
 			}
 		}

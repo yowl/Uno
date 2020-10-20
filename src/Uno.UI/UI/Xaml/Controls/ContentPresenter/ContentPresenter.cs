@@ -1043,6 +1043,7 @@ namespace Windows.UI.Xaml.Controls
 		{
 			var padding = Padding;
 			var borderThickness = BorderThickness;
+			FrameworkElementHelper.PrintLine("ContentPreseenter.MeasureOverride size before adjustments " + size);
 
 			var measuredSize = base.MeasureOverride(
 				new Size(

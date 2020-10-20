@@ -69,8 +69,12 @@ namespace Windows.UI.Xaml
 
 		private void InnerMeasureCore(Size availableSize)
 		{
+			FrameworkElementHelper.PrintLine("getting max size " + availableSize);
 			var (minSize, maxSize) = this.GetMinMax();
+			FrameworkElementHelper.PrintLine("max size " + maxSize.ToString());
+
 			var marginSize = this.GetMarginSize();
+			FrameworkElementHelper.PrintLine("marginSize " + marginSize);
 
 			// NaN values are accepted as input here, particularly when coming from
 			// SizeThatFits in Image or Scrollviewer. Clamp the value here as it is reused
@@ -83,7 +87,9 @@ namespace Windows.UI.Xaml
 				.AtLeastZero()
 				.AtMost(maxSize);
 
+			FrameworkElementHelper.PrintLine("InnerMeasureCore MeasureOverride frameworkAvailableSize " + frameworkAvailableSize);
 			var desiredSize = MeasureOverride(frameworkAvailableSize);
+			FrameworkElementHelper.PrintLine("InnerMeasureCore  desired after MeasureOverride  " + desiredSize);
 
 			_logDebug?.LogTrace($"{DepthIndentation}{FormatDebugName()}.MeasureOverride(availableSize={frameworkAvailableSize}): desiredSize={desiredSize} minSize={minSize} maxSize={maxSize} marginSize={marginSize}");
 
@@ -100,6 +106,7 @@ namespace Windows.UI.Xaml
 			desiredSize = desiredSize
 				.AtLeast(minSize)
 				.AtLeastZero();
+			FrameworkElementHelper.PrintLine("InnerMeasureCore  desired after  AtLeastZero " + desiredSize);
 
 			_unclippedDesiredSize = desiredSize;
 
@@ -108,11 +115,13 @@ namespace Windows.UI.Xaml
 				.Add(marginSize)
 				// Margin may be negative
 				.AtLeastZero();
+			FrameworkElementHelper.PrintLine("InnerMeasureCore  clippedDesiredSize after  AtLeastZero " + clippedDesiredSize);
 
 			// DesiredSize must include margins
 			SetDesiredSize(clippedDesiredSize);
 
 			_logDebug?.Debug($"{DepthIndentation}[{FormatDebugName()}] Measure({Name}/{availableSize}/{Margin}) = {clippedDesiredSize} _unclippedDesiredSize={_unclippedDesiredSize}");
+			FrameworkElementHelper.PrintLine("InnerMeasureCore  done ");
 		}
 
 		private string FormatDebugName()

@@ -160,6 +160,7 @@ return __f(element);
 		/// </summary>
 		public static void RegisterHtmlEventHandler(this UIElement element, string eventName, EventHandler handler)
 		{
+			Application.PrintLine("RegisterHtmlEventHandler " + eventName);
 			element.RegisterEventHandler(eventName, handler);
 		}
 
@@ -185,7 +186,7 @@ return __f(element);
 			var extractor = isDetailJson
 				? UIElement.HtmlEventExtractor.CustomEventDetailJsonExtractor
 				: UIElement.HtmlEventExtractor.CustomEventDetailStringExtractor;
-
+			Application.PrintLine("RegisterHtmlCustomEventHandler");
 			element.RegisterEventHandler(
 				eventName,
 				handler,

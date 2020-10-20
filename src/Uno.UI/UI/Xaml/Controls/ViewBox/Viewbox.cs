@@ -38,6 +38,8 @@ namespace Windows.UI.Xaml.Controls
 
 		protected override Size MeasureOverride(Size availableSize)
 		{
+			FrameworkElementHelper.PrintLine("Viewbox.MeasureOverride  " + availableSize);
+
 			var measuredSize = base.MeasureOverride(
 				new Size(
 					double.PositiveInfinity,

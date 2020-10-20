@@ -32,13 +32,22 @@ namespace Windows.UI.Xaml.Controls
 
 		public ScrollContentPresenter()
 		{
+			Application.PrintLine("ScrollContentPresenter");
 			PointerReleased += ScrollViewer_PointerReleased;
+			Application.PrintLine("ScrollContentPresenter PointerReleased");
+
 			PointerPressed += ScrollViewer_PointerPressed;
+			Application.PrintLine("ScrollContentPresenter PointerPressed");
 			PointerCanceled += ScrollContentPresenter_PointerCanceled;
+			Application.PrintLine("ScrollContentPresenter PointerCanceled");
 			PointerMoved += ScrollContentPresenter_PointerMoved;
+			Application.PrintLine("ScrollContentPresenter PointerMoved");
 			PointerEntered += ScrollContentPresenter_PointerEntered;
+			Application.PrintLine("ScrollContentPresenter PointerEntered");
 			PointerExited += ScrollContentPresenter_PointerExited;
+			Application.PrintLine("ScrollContentPresenter PointerExited");
 			PointerWheelChanged += ScrollContentPresenter_PointerWheelChanged;
+			Application.PrintLine("ScrollContentPresenter PointerWheelChanged");
 		}
 
 		private void ScrollContentPresenter_PointerWheelChanged(object sender, Input.PointerRoutedEventArgs e)
@@ -128,8 +137,11 @@ namespace Windows.UI.Xaml.Controls
 
 		private protected override void OnLoaded()
 		{
+			Application.PrintLine("scrollcontentpresenter OnLoaded ");
+
 			base.OnLoaded();
 			RegisterEventHandler("scroll", (EventHandler)OnScroll);
+			Application.PrintLine("scrollcontentpresenter OnLoaded end");
 		}
 
 		private protected override void OnUnloaded()

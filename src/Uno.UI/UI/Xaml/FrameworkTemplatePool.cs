@@ -123,6 +123,8 @@ namespace Windows.UI.Xaml
 
 		private async void Scavenger(IdleDispatchedHandlerArgs e)
 		{
+			FrameworkElementHelper.PrintLine("FrameworkTemplatePool Scavenger");
+
 			Scavenge(false);
 
 			await Task.Delay(TimeSpan.FromSeconds(30));

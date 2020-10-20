@@ -324,15 +324,20 @@ namespace Windows.UI.Xaml
 		/// <param name="binding">The binding expression</param>
 		public void SetBinding(DependencyProperty dependencyProperty, BindingBase binding)
 		{
+			Application.PrintLine("SetBinding " + dependencyProperty.Name);
 			TryRegisterInheritedProperties(force: true);
 
 			if (dependencyProperty == null)
 			{
+				Application.PrintLine("SetBinding ArgumentNullException  1");
+
 				throw new ArgumentNullException(nameof(dependencyProperty));
 			}
 
 			if (binding == null)
 			{
+				Application.PrintLine("SetBinding ArgumentNullException");
+
 				throw new ArgumentNullException(nameof(binding));
 			}
 
@@ -347,8 +352,12 @@ namespace Windows.UI.Xaml
 			}
 			else
 			{
+				Application.PrintLine("SetBinding NotSupportedException");
+
 				throw new NotSupportedException("Only Windows.UI.Xaml.Data.Binding is supported for bindings.");
 			}
+			Application.PrintLine("SetBinding end " + dependencyProperty.Name);
+
 		}
 
 		public void SetResourceBinding(DependencyProperty dependencyProperty, object resourceKey, bool isTheme, object context)

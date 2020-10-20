@@ -90,6 +90,7 @@ namespace Windows.UI.Xaml.Controls
 		{
 			SynchronizeHtmlParagraphAttributes();
 
+			FrameworkElementHelper.PrintLine("TextBlock.MeasureOverride " + availableSize);
 			if (UseInlinesFastPath)
 			{
 				if (_cache.FindMeasuredSize(this, availableSize) is Size desiredSize)

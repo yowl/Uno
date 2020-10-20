@@ -66,6 +66,7 @@ namespace Windows.UI.Xaml
 					_subscribeCommand();
 					_isSubscribed = true;
 				}
+				Application.PrintLine("handler added for event registration");
 			}
 
 			public void Remove(Delegate handler)
@@ -162,6 +163,7 @@ namespace Windows.UI.Xaml
 			{
 				this.Log().Debug($"Registering {eventName} on {this}.");
 			}
+			Application.PrintLine($"Registering {eventName} on {this}.");
 
 			if (!_eventHandlers.TryGetValue(eventName, out var registration))
 			{

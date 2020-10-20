@@ -272,28 +272,35 @@ namespace Windows.UI.Xaml.Controls
 		{
 			try
 			{
+				Application.PrintLine("InnerNavigate");
 				// Navigating
 				var navigatingFromArgs = new NavigatingCancelEventArgs(
 					mode,
 					entry.NavigationTransitionInfo,
 					entry.Parameter,
 					entry.SourcePageType
-				);
+				); 
+				Application.PrintLine("InnerNavigate Invoke");
 
 				Navigating?.Invoke(this, navigatingFromArgs);
 
+				Application.PrintLine("InnerNavigate if (navigatingFromArgs.Cancel)");
 				if (navigatingFromArgs.Cancel)
 				{
 					// Frame canceled
+					Application.PrintLine("InnerNavigate OnNavigationStopped");
 					OnNavigationStopped(entry, mode);
 					return false;
 				}
 
+					Application.PrintLine("InnerNavigate OnNavigatingFrom");
 				CurrentEntry?.Instance.OnNavigatingFrom(navigatingFromArgs);
 
+					Application.PrintLine("InnerNavigate navigatingFromArgs.Cancel");
 				if (navigatingFromArgs.Cancel)
 				{
 					// Page canceled
+					Application.PrintLine("InnerNavigate OnNavigationStopped");
 					OnNavigationStopped(entry, mode);
 					return false;
 				}
@@ -302,14 +309,22 @@ namespace Windows.UI.Xaml.Controls
 				var previousEntry = CurrentEntry;
 				CurrentEntry = entry;
 
+					Application.PrintLine("InnerNavigate mode == NavigationMode.New");
 				if (mode == NavigationMode.New)
 				{
+					Application.PrintLine("InnerNavigate ReleasePages");
 					// Doing this first allows CurrentEntry to reuse existing page if pooling is enabled
 					ReleasePages(ForwardStack);
 				}
 
+					Application.PrintLine("InnerNavigate CurrentEntry.Instance == null");
 				if (CurrentEntry.Instance == null)
 				{
+					Application.PrintLine("InnerNavigate CreatePageInstanceCached");
+                    if (entry == null)
+                    {
+                        Application.PrintLine("InnerNavigate entry == null");
+					}
 					var page = CreatePageInstanceCached(entry.SourcePageType);
 					if (page == null)
 					{
@@ -320,33 +335,40 @@ namespace Windows.UI.Xaml.Controls
 					CurrentEntry.Instance = page;
 				}
 
+					Application.PrintLine("InnerNavigate Content = CurrentEntry.Instance");
 				Content = CurrentEntry.Instance;
 
+					Application.PrintLine("InnerNavigate IsNavigationStackEnabled");
 				if (IsNavigationStackEnabled)
 				{
 					switch (mode)
 					{
 						case NavigationMode.New:
+					Application.PrintLine("InnerNavigate New");
 							ForwardStack.Clear();
-							if (previousEntry != null)
+					if (previousEntry != null)
 							{
 								BackStack.Add(previousEntry);
 							}
 							break;
 						case NavigationMode.Back:
+					Application.PrintLine("InnerNavigate Back");
 							ForwardStack.Add(previousEntry);
 							BackStack.Remove(CurrentEntry);
 							break;
 						case NavigationMode.Forward:
+					Application.PrintLine("InnerNavigate Forward");
 							BackStack.Add(previousEntry);
-							ForwardStack.Remove(CurrentEntry);
+					ForwardStack.Remove(CurrentEntry);
 							break;
 						case NavigationMode.Refresh:
+					Application.PrintLine("InnerNavigate Refresh");
 							break;
 					}
 				}
 
 				// Navigated
+					Application.PrintLine("InnerNavigate new NavigationEventArgs");
 				var navigationEvent = new NavigationEventArgs(
 					CurrentEntry.Instance,
 					mode,
@@ -356,10 +378,14 @@ namespace Windows.UI.Xaml.Controls
 					null
 				);
 
+					Application.PrintLine("InnerNavigate OnNavigatedFrom");
 				previousEntry?.Instance.OnNavigatedFrom(navigationEvent);
+					Application.PrintLine("InnerNavigate OnNavigatedTo");
 				CurrentEntry.Instance.OnNavigatedTo(navigationEvent);
+					Application.PrintLine("InnerNavigate Navigated?.Invoke");
 				Navigated?.Invoke(this, navigationEvent);
 
+					Application.PrintLine("InnerNavigate CloseAllPopups");
 				VisualTreeHelper.CloseAllPopups();
 
 				return true;
@@ -403,19 +429,31 @@ namespace Windows.UI.Xaml.Controls
 
 		public void SetNavigationState(string navigationState) => _navigationState = navigationState;
 
-		private static Page CreatePageInstanceCached(Type sourcePageType) => _pool.DequeuePage(sourcePageType);
+		private static Page CreatePageInstanceCached(Type sourcePageType)
+		{
+			Application.PrintLine("_pool.DequeuePage");
+
+			return _pool.DequeuePage(sourcePageType);
+		}
 
 		internal static Page CreatePageInstance(Type sourcePageType)
 		{
+			Application.PrintLine("CreatePageInstance");
+
 			if (Uno.UI.DataBinding.BindingPropertyHelper.BindableMetadataProvider != null)
 			{
+				Application.PrintLine("BindableMetadataProvider");
+
 				var bindableType = Uno.UI.DataBinding.BindingPropertyHelper.BindableMetadataProvider.GetBindableTypeByType(sourcePageType);
 
 				if (bindableType != null)
 				{
+					Application.PrintLine("CreateInstance");
+
 					return bindableType.CreateInstance()() as Page;
 				}
 			}
+			Application.PrintLine("Activator.CreateInstance");
 
 			return Activator.CreateInstance(sourcePageType) as Page;
 		}

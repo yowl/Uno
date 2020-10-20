@@ -363,6 +363,7 @@ namespace Windows.UI.Xaml
 			{
 				handlers.Add(new RoutedEventHandlerInfo(handler, handledEventsToo));
 			}
+			Application.PrintLine("InsertHandler AddHandler");
 
 			AddHandler(routedEvent, handlers.Count, handler, handledEventsToo);
 
@@ -371,6 +372,7 @@ namespace Windows.UI.Xaml
 			{
 				UpdateSubscribedToHandledEventsToo();
 			}
+			Application.PrintLine("InsertHandler AddHandler end");
 		}
 
 		public void AddHandler(RoutedEvent routedEvent, object handler, bool handledEventsToo)
@@ -379,12 +381,13 @@ namespace Windows.UI.Xaml
 			handlers.Add(new RoutedEventHandlerInfo(handler, handledEventsToo));
 
 			AddHandler(routedEvent, handlers.Count, handler, handledEventsToo);
-
+			Application.PrintLine("AddHandler AddHandler");
 			if (handledEventsToo
 				&& !routedEvent.IsAlwaysBubbled) // This event is always bubbled, no needs to update the flag
 			{
 				UpdateSubscribedToHandledEventsToo();
 			}
+			Application.PrintLine("AddHandler AddHandler end");
 		}
 
 		private void AddHandler(RoutedEvent routedEvent, int handlersCount, object handler, bool handledEventsToo)
